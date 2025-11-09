@@ -16,7 +16,6 @@ interface menuItem {
 
 const MainLayout = ({ children }: { children: ReactNode }) => {
   const { user, menuItems: shareMenuItems } = usePage().props as any
-  console.log(usePage().props)
 
   const menuItems = (shareMenuItems as menuItem[]) ?? []
 

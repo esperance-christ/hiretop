@@ -29,8 +29,6 @@ export default function CompleteProfile() {
     { id: 4, name: 'Expériences' },
   ]
 
-  console.log(usePage().props)
-
   const [formData, setFormData] = useState({
     firstname:  talent.firstname || '',
     lastname:  talent.lastname || '',

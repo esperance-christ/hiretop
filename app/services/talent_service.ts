@@ -7,6 +7,7 @@ import TalentExperience from '#models/talent_experience'
 import { cuid } from '@adonisjs/core/helpers'
 import drive from '@adonisjs/drive/services/main'
 import { Exception } from '@adonisjs/core/exceptions'
+import TalentSkill from '#models/talent_skill'
 
 interface TalentFilters {
   search?: string
@@ -226,7 +227,7 @@ export class TalentService {
     talentId: number,
     data: UpdateTalentData,
     userId: number
-  ): Promise<TalentProfile> {
+  ): Promise<any> {
     const {
       phone,
       title,
@@ -241,18 +242,12 @@ export class TalentService {
       educations,
     } = data
 
-    //  Recuperation des informations du profile talent
     const talentProfile = await TalentProfile.query()
       .where('id', talentId)
-      .preload('user')
-      .preload('skills')
-      .preload('experiences')
-      .preload('educations')
       .firstOrFail()
 
-    // Verification de l'autorisation
     if (talentProfile.userId !== userId) {
-      throw new Error("Vous n'êtes pas autorisé à effectuer cette action:")
+      throw new Error("Vous n'êtes pas autorisé à effectuer cette action.")
     }
 
     if (phone !== undefined) talentProfile.phone = phone
@@ -263,109 +258,130 @@ export class TalentService {
     if (linkedinUrl !== undefined) talentProfile.linkedinUrl = linkedinUrl
     if (githubUrl !== undefined) talentProfile.githubUrl = githubUrl
 
-    // Envoie ou mise a jour du CV
     if (cv) {
       const fileName = `${cuid()}.${cv.extname}`
       await cv.moveToDisk('cvs', { name: fileName }, 'local')
       talentProfile.cvUrl = await drive.use().getUrl(`cvs/${fileName}`)
     }
 
-    // Creation ou mise a jour des competences
-    if (skills !== undefined) {
+    if(skills !== undefined && Array.isArray(skills) && skills.length > 0) {
+      const skillIds = skills.map((s: any) => (s.skillId !== undefined ? s.skillId : s))
       const validSkillIds = await Skill.query()
-        .whereIn(
-          'id',
-          skills.map((s) => s.skillId)
-        )
+        .whereIn('id', skillIds)
         .select('id')
+
       const validIds = validSkillIds.map((s) => s.id)
 
-      if (validIds.length !== skills.length) {
+      if (validIds.length !== skillIds.length) {
         throw new Error('Une ou plusieurs compétences sont invalides.')
       }
 
       await talentProfile.related('skills').detach()
 
       const attachData: Record<number, { level: number }> = {}
-      for (const { skillId, level } of skills) {
-        attachData[skillId] = { level: level || 1 }
+      for (const s of skills) {
+        const id = s.skillId !== undefined ? s.skillId : s
+        attachData[id] = { level: s.level || 1 }
       }
 
       await talentProfile.related('skills').attach(attachData)
     }
+// A corriger
+    // if (experiences !== undefined) {
+    //   const existing = await TalentExperience.query()
+    //     .where('talent_profile_id', talentId)
+    //     .select('id')
 
-    // Creation ou mise a jour des experiences professionnelles
-    if (experiences !== undefined) {
-      const existingIds = talentProfile.experiences.map((e) => e.id).filter(Boolean)
-      const incomingIds = experiences.map((e) => e.id).filter(Boolean)
+    //   const existingIds = existing.map((e) => e.id)
+    //   const incomingIds = experiences.map((e) => e.id).filter(Boolean)
 
-      const toDelete = existingIds.filter((id) => !incomingIds.includes(id))
-      if (toDelete.length > 0) {
-        await TalentExperience.query()
-          .whereIn('id', toDelete)
-          .where('talent_profile_id', talentId)
-          .delete()
-      }
+    //   const toDelete = existingIds.filter((id) => !incomingIds.includes(id))
 
-      for (const exp of experiences) {
-        const payload = {
-          title: exp.title,
-          company: exp.company,
-          location: exp.location,
-          start_date: exp.startDate,
-          end_date: exp.current ? null : exp.endDate,
-          current: exp.current || false,
-          description: exp.description,
-        }
+    //   if (toDelete.length > 0) {
+    //     await TalentExperience.query()
+    //       .whereIn('id', toDelete)
+    //       .where('talent_profile_id', talentId)
+    //       .delete()
+    //   }
 
-        if (exp.id) {
-          await TalentExperience.query().where('id', exp.id).update(payload)
-        } else {
-          await talentProfile.related('experiences').create(payload)
-        }
-      }
-    }
+    //   for (const exp of experiences) {
+    //     const payload = {
+    //       title: exp.title,
+    //       company: exp.company,
+    //       location: exp.location,
+    //       start_date: exp.startDate,
+    //       end_date: exp.current ? null : exp.endDate,
+    //       current: exp.current || false,
+    //       description: exp.description,
+    //     }
 
-    // Creation ou mise a jour des formations
-    if (educations !== undefined) {
-      const existingIds = talentProfile.educations.map((e) => e.id).filter(Boolean)
-      const incomingIds = educations.map((e) => e.id).filter(Boolean)
+    //     if (exp.id) {
+    //       await TalentExperience.query().where('id', exp.id).update(payload)
+    //     } else {
+    //       await TalentExperience.create({
+    //         talent_id: talentId,
+    //         ...payload,
+    //       })
+    //     }
+    //   }
+    // }
 
-      const toDelete = existingIds.filter((id) => !incomingIds.includes(id))
-      if (toDelete.length > 0) {
-        await TalentEducation.query()
-          .whereIn('id', toDelete)
-          .where('talent_profile_id', talentId)
-          .delete()
-      }
 
-      for (const edu of educations) {
-        const payload = {
-          school: edu.school,
-          degree: edu.degree,
-          field: edu.field,
-          start_date: edu.startDate,
-          end_date: edu.current ? null : edu.endDate,
-          current: edu.current || false,
-        }
+    // if (educations !== undefined) {
+    //   const existing = await TalentEducation.query()
+    //     .where('talent_profile_id', talentId)
+    //     .select('id')
 
-        if (edu.id) {
-          await TalentEducation.query().where('id', edu.id).update(payload)
-        } else {
-          await talentProfile.related('educations').create(payload)
-        }
-      }
-    }
+    //   const existingIds = existing.map((e) => e.id)
+    //   const incomingIds = educations.map((e) => e.id).filter(Boolean)
+
+    //   const toDelete = existingIds.filter((id) => !incomingIds.includes(id))
+
+    //   if (toDelete.length > 0) {
+    //     await TalentEducation.query()
+    //       .whereIn('id', toDelete)
+    //       .where('talent_profile_id', talentId)
+    //       .delete()
+    //   }
+
+    //   for (const edu of educations) {
+    //     const payload = {
+    //       school: edu.school,
+    //       degree: edu.degree,
+    //       field: edu.field,
+    //       start_date: edu.startDate,
+    //       end_date: edu.current ? null : edu.endDate,
+    //       current: edu.current || false,
+    //     }
+
+    //     if (edu.id) {
+    //       await TalentEducation.query().where('id', edu.id).update(payload)
+    //     } else {
+    //       await TalentEducation.create({
+    //         talent_id: talentId,
+    //         ...payload,
+    //       })
+    //     }
+    //   }
+    // }
 
     await talentProfile.save()
 
-    await talentProfile.load('user')
-    await talentProfile.load('skills')
-    await talentProfile.load('experiences')
-    await talentProfile.load('educations')
+    /**
+     * Retour formaté (sans preload)
+     */
+    const talentSkills = await TalentSkill.query().where('talent_id', talentId)
+    const talentExperience = await TalentExperience.query().where('talent_profile_id', talentId)
+    const talentEducation = await TalentEducation.query().where('talent_profile_id', talentId)
 
-    return talentProfile
+    return {
+      ...talentProfile.toJSON(),
+      skills: talentSkills,
+      experiences: talentExperience,
+      educations: talentEducation,
+    }
   }
+
 
   /**
    * Verifier le pourcentage de completion du profil du talent

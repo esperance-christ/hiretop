@@ -1,3 +1,6 @@
+import Company from '#models/company'
+import Skill from '#models/skill'
+import TalentProfile from '#models/talent_profile'
 import User from '#models/user'
 import { cuid } from '@adonisjs/core/helpers'
 import drive from '@adonisjs/drive/services/main'
@@ -48,10 +51,24 @@ export default class UserService {
   }
 
   async getUser(user: User){
-    // await user.load('company')
-    await user.load('talentProfile')
+    const fullUser = await User.query().where('id', user.id).firstOrFail()
 
-    return user
+    const talentProfile = await TalentProfile.query()
+      .where('user_id', user.id)
+      .first()
+
+    const company = await Company.query()
+      .where('admin_id', user.id)
+      .first()
+
+    const skills = await Skill.all()
+
+    return {
+      ...fullUser.$attributes,
+      talentProfile,
+      company,
+      skills
+    }
   }
 
   async delete(user: User) {

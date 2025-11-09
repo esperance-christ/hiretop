@@ -49,6 +49,21 @@ export default class LoginController {
     session.flash('auth', { type: 'success', message: 'Connexion réussie ! Bienvenue.' })
     console.log('recuperation user (async)', await auth?.use('web').user)
 
+    // EN ATTENTE DE CORRECTION LOGIQUE BALANCE VERS MIDDLEWARE
+    // const logged = await auth?.use('web').user!
+
+    // if (!logged) {
+    //   return response.redirect('/auth/login')
+    // }
+
+    // if (await logged.hasRole('TALENT')) {
+    //   return response.redirect('/talent/dashboard')
+    // }
+
+    // if (await logged.hasAnyRole('RECRUITER', 'COMPANY_ADMIN')) {
+    //   return response.redirect('/recruiter/dashboard')
+    // }
+
     return response.redirect().toPath('/talent/dashboard')
   }
 }

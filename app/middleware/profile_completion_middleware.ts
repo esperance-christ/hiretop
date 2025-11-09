@@ -10,7 +10,6 @@ export default class CheckTalentProfileCompletionMiddleware {
     const userRole = await user.roles().first()
     if (!user || !userRole) return next()
 
-    console.log(user)
 
     const talentService = new TalentService()
 

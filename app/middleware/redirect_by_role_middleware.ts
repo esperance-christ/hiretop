@@ -13,8 +13,6 @@ export default class RedirectByRoleMiddleware {
       return await next()
     }
 
-    console.log(auth.isAuthenticated)
-    console.log('utilisateur connecte: ', auth.user)
     if (auth.isAuthenticated && !auth.user.emailVerifiedAt) {
       return response.redirect().toPath('/auth/register/success')
     }

@@ -4,7 +4,75 @@ import Footer from '~/components/footer'
 import Logo from '~/components/logo'
 
 export default function Home({ jobs = [] }) {
-  console.log(usePage().props)
+
+  const sampleJobs = () => [
+    {
+      id: 1,
+      title: 'Développeur Full Stack',
+      company: 'Andela Nigeria',
+      summary: 'Rejoignez une équipe innovante pour créer des solutions web à grande échelle.',
+      tags: ['React', 'Node.js', 'Remote'],
+      salary: 1500,
+    },
+    {
+      id: 2,
+      title: 'Marketing Digital',
+      company: 'Jumia Group',
+      summary: 'Gérez des campagnes marketing pour l’e-commerce en Afrique.',
+      tags: ['SEO', 'Social Media', 'Content'],
+      salary: 1200,
+    },
+    {
+      id: 3,
+      title: 'Designer UI/UX',
+      company: 'Flutterwave',
+      summary: 'Concevez des interfaces modernes pour les applications financières.',
+      tags: ['Figma', 'UX Research', 'Prototyping'],
+      salary: 1400,
+    },
+    {
+      id: 4,
+      title: 'Data Analyst',
+      company: 'MTN Ghana',
+      summary: 'Analysez les données pour améliorer l’expérience client.',
+      tags: ['SQL', 'Python', 'PowerBI'],
+      salary: 1300,
+    },
+    {
+      id: 5,
+      title: 'Ingénieur DevOps',
+      company: 'Safaricom',
+      summary: 'Automatisez les déploiements et assurez la stabilité des systèmes.',
+      tags: ['AWS', 'Docker', 'Kubernetes'],
+      salary: 1600,
+    },
+    {
+      id: 6,
+      title: 'Community Manager',
+      company: 'Konga',
+      summary: 'Développez et engagez la communauté en ligne autour de nos produits.',
+      tags: ['Social Media', 'Content Creation', 'Marketing'],
+      salary: 1000,
+    },
+    {
+      id: 7,
+      title: 'Product Manager',
+      company: 'Interswitch',
+      summary: 'Supervisez le développement des produits fintech innovants.',
+      tags: ['Agile', 'Roadmap', 'Stakeholders'],
+      salary: 1700,
+    },
+    {
+      id: 8,
+      title: 'Mobile Developer',
+      company: 'Paystack',
+      summary: 'Créez des applications mobiles sécurisées pour les paiements.',
+      tags: ['Flutter', 'React Native', 'API Integration'],
+      salary: 1500,
+    },
+  ]
+
+  
   return (
     <div className="min-h-screen bg-white text-gray-800 antialiased">
       {/* Header */}

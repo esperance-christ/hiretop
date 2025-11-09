@@ -14,20 +14,7 @@ const inertiaConfig = defineConfig({
   sharedData: {
     user: (ctx) =>
       ctx.inertia.always(async () => {
-        const user = ctx.auth.use('web').user!
-        return {
-          id: user.id,
-          firstname: user.firstname,
-          lastname: user.lastname,
-          email: user.email,
-          profile: user.profile,
-          emailVerifiedAt: user.emailVerifiedAt?.toISO(),
-          roles: await user.roles(),
-          isTalent: await user.hasRole('TALENT'),
-          isCompanyAdmin: await user.hasRole('COMPANY_ADMIN'),
-          isRecruiter: await user.hasRole('RECRUITER'),
-          talentProfile: user.talentProfile ?? null,
-        }
+        return ctx.auth.use('web').user!
       }),
     menuItems: (ctx) =>
       ctx.inertia.always(async () => {

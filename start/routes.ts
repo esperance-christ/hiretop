@@ -69,7 +69,7 @@ router
 
     // Candidatures du talent
     router.get('/profile', [ProfileController, 'show']).as('talent.profile')
-    router.put('/profile/:id', [ProfileController, 'update'])
+    router.post('/profile/:id', [ProfileController, 'update'])
 
     router.get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile')).as('complete.profile')
   })
