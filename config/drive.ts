@@ -9,12 +9,24 @@ const driveConfig = defineConfig({
    * The services object can be used to configure multiple file system
    * services each using the same or a different driver.
    */
-  services: { 
+  services: {
     fs: services.fs({
       location: app.makePath('storage'),
       serveFiles: true,
       routeBasePath: '/uploads',
       visibility: 'public',
+    }),
+
+    supabase: services.s3({
+      credentials: {
+        accessKeyId: env.get('SUPABASE_ACCESS_KEY_ID')!,
+        secretAccessKey: env.get('SUPABASE_SECRET_ACCESS_KEY')!,
+      },
+      region: env.get('SUPABASE_REGION'),
+      bucket: env.get('SUPABASE_STORAGE_BUCKET')!,
+      endpoint: env.get('SUPABASE_STORAGE_ENDPOINT'),
+      visibility: 'public',
+      forcePathStyle: false,
     }),
   },
 })

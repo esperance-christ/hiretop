@@ -17,6 +17,7 @@
   "imports": {
     "#controllers/*": "./app/controllers/*.js",
     "#exceptions/*": "./app/exceptions/*.js",
+    "#helpers/*": "./app/helpers/*.js",
     "#models/*": "./app/models/*.js",
     "#mails/*": "./app/mails/*.js",
     "#services/*": "./app/services/*.js",
@@ -81,6 +82,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@supabase/supabase-js": "^2.84.0",
     "@tailwindcss/vite": "^4.1.17",
     "@vinejs/vine": "^3.0.1",
     "class-variance-authority": "^0.7.1",
@@ -91,6 +93,7 @@
     "luxon": "^3.7.2",
     "mysql2": "^3.15.3",
     "next-themes": "^0.4.6",
+    "pg": "^8.16.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.66.0",

@@ -1,10 +1,7 @@
-Parfait ! Voici une version de README Markdown **réécrite pour suivre exactement ton schéma** :
-
-````markdown
 # HireTop
 
 **Statut :** En développement  
-**Version :** 0.0.0  
+**Version :** 1.0.0  
 
 HireTop est une plateforme africaine de mise en relation entre talents et entreprises. Les utilisateurs peuvent consulter et postuler facilement aux offres d’emploi, tandis que les recruteurs peuvent publier et gérer leurs opportunités.  
 

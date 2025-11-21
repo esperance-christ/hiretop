@@ -38,6 +38,39 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   /*
   |----------------------------------------------------------
+  | Base de données DEV (local)
+  |----------------------------------------------------------
+  */
+  DB_DEV_HOST: Env.schema.string({ format: 'host' }),
+  DB_DEV_PORT: Env.schema.number(),
+  DB_DEV_USER: Env.schema.string(),
+  DB_DEV_PASSWORD: Env.schema.string(),
+  DB_DEV_DATABASE: Env.schema.string(),
+
+  /*
+ |----------------------------------------------------------
+ | Base de données PROD (Supabase)
+ |----------------------------------------------------------
+ */
+  DB_PROD_HOST: Env.schema.string({ format: 'host' }),
+  DB_PROD_PORT: Env.schema.number(),
+  DB_PROD_USER: Env.schema.string(),
+  DB_PROD_PASSWORD: Env.schema.string(),
+  DB_PROD_DATABASE: Env.schema.string(),
+
+  /*
+|----------------------------------------------------------
+| Supabase Storage (S3)
+|----------------------------------------------------------
+*/
+  SUPABASE_STORAGE_BUCKET: Env.schema.string(),
+  SUPABASE_STORAGE_URL: Env.schema.string(),
+  SUPABASE_ACCESS_KEY_ID: Env.schema.string(),
+  SUPABASE_SECRET_ACCESS_KEY: Env.schema.string(),
+  SUPABASE_REGION: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
   | Variables for configuring the mail package
   |----------------------------------------------------------
   */
@@ -54,5 +87,5 @@ export default await Env.create(new URL('../', import.meta.url), {
   R2_KEY: Env.schema.string(),
   R2_SECRET: Env.schema.string(),
   R2_BUCKET: Env.schema.string(),
-  R2_ENDPOINT: Env.schema.string()
+  R2_ENDPOINT: Env.schema.string(),
 })

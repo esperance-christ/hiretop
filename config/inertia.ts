@@ -14,7 +14,21 @@ const inertiaConfig = defineConfig({
   sharedData: {
     user: (ctx) =>
       ctx.inertia.always(async () => {
-        return ctx.auth.use('web').user!
+        const logUser = ctx.auth.use('web').user
+
+        if (!logUser) return null
+
+        const role = await logUser.roles().first()
+        const permissions = await logUser.permissions()
+
+        const serializedUser = logUser.serialize()
+
+        return {
+          ...serializedUser,
+          role,
+          permissions,
+        }
+
       }),
     menuItems: (ctx) =>
       ctx.inertia.always(async () => {

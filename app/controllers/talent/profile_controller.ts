@@ -21,41 +21,30 @@ export default class ProfileController {
    */
   async show({ auth, inertia }: HttpContext) {
     const user = auth.user!
-    // const fullUser = await this.userService.getUser(user)
-    const fullUser = await User.query().where('id', user.id).firstOrFail()
 
-    // Si pas de talentProfile, on met completion à 0
+    // Charger l'utilisateur
+    const fullUser = await User.query().where('id', user.id).preload('talentProfile').firstOrFail()
+
     let completion = 0
-    let talentSkills = null
-    let talentEducation = null
-    let talentExperience = null
+    let talentSkills: TalentSkill[] = []
+    let talentEducation: TalentEducation[] = []
+    let talentExperience: TalentExperience[] = []
+    let talentProfile = fullUser.talentProfile
 
-    if (fullUser.talentProfile) {
-      fullUser.load('talentProfile')
+    // Si le talentProfile existe
+    if (talentProfile) {
+      talentSkills = await TalentSkill.query().where('talent_id', talentProfile.id)
+
+      talentEducation = await TalentEducation.query().where('talent_id', talentProfile.id)
+
+      talentExperience = await TalentExperience.query().where('talent_id', talentProfile.id)
+
       completion = await this.talentService.getTalentProfileCompletion(fullUser)
+
+      console.log(completion)
     }
 
-    if (fullUser.talentProfile) {
-      const skills = await TalentSkill.query()
-        .where('talent_id', fullUser.talentProfile.id)
-        .firstOrFail()
-      talentSkills = skills
-    }
-
-    const talentProfile = await TalentProfile.query().where('user_id', fullUser.id).firstOrFail()
-
-    if (talentProfile) {
-      talentEducation = await (
-        await TalentEducation.query().where('talent_id', talentProfile.id)
-      ).entries()
-    }
-
-    if (talentProfile) {
-      talentEducation = (
-        await TalentExperience.query().where('talent_id', talentProfile.id)
-      ).entries()
-    }
-
+    // Charger les skills disponibles pour les selects
     const skills = await Skill.all()
 
     return inertia.render('talent/profile', {
@@ -87,14 +76,18 @@ export default class ProfileController {
     if (updateType === 'talent') {
       const data: any = request.all()
 
+      // Gestion du CV si envoyé
       const cvFile = request.file('cv')
       if (cvFile) data.cv = cvFile
 
-      const talentProfile = await TalentProfile.query().where('user_id', fullUser.id).firstOrFail()
+      // On cherche le talentProfile (peut être null)
+      let talentProfile = await TalentProfile.query().where('user_id', fullUser.id).first()
 
       if (!talentProfile) {
+        // Crée le profil si inexistant
         await this.talentService.createTalent(fullUser.id, data)
       } else {
+        // Sinon met à jour
         await this.talentService.updateTalent(talentProfile.id, data, fullUser.id)
       }
 

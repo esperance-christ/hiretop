@@ -47,7 +47,6 @@ export default class LoginController {
     await auth.use('web').login(user)
 
     session.flash('auth', { type: 'success', message: 'Connexion réussie ! Bienvenue.' })
-    console.log('recuperation user (async)', await auth?.use('web').user)
 
     // EN ATTENTE DE CORRECTION LOGIQUE BALANCE VERS MIDDLEWARE
     // const logged = await auth?.use('web').user!
@@ -64,6 +63,6 @@ export default class LoginController {
     //   return response.redirect('/recruiter/dashboard')
     // }
 
-    return response.redirect().toPath('/talent/dashboard')
+    return response.redirect().toPath('/dashboard')
   }
 }

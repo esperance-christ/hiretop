@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react'
-import { usePage, router } from '@inertiajs/react'
+import React, { useRef, useState, useMemo } from 'react'
+import { usePage, router, useForm } from '@inertiajs/react'
 import MainLayout from '~/layouts/main_layout'
 import { Card, CardContent, CardTitle } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
@@ -15,149 +15,274 @@ import {
   DialogFooter,
   DialogClose,
 } from '~/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select'
-import { User as UserIcon } from 'lucide-react'
 import { MultiSelect } from '~/components/ui/multi-select'
+import { User as UserIcon } from 'lucide-react'
+import { z } from 'zod'
+
+function SearchableMultiSelect({
+  options,
+  values,
+  onValueChange,
+  placeholder = 'Sélectionner...',
+}: {
+  options: { label: string; value: number }[]
+  values: number[]
+  onValueChange: (vals: number[]) => void
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return options
+    return options.filter((o) => o.label.toLowerCase().includes(q))
+  }, [options, query])
+
+  const toggle = (value: number) => {
+    if (values.includes(value)) {
+      onValueChange(values.filter((v) => v !== value))
+    } else {
+      onValueChange([...values, value])
+    }
+  }
+
+  return (
+    <div className="relative inline-block w-full">
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        className="w-full p-2 border rounded text-left"
+      >
+        {values.length === 0 ? (
+          <span className="text-gray-400">{placeholder}</span>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {values.map((v) => {
+              const opt = options.find((o) => o.value === v)
+              return (
+                <span key={v} className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm">
+                  {opt?.label ?? v}
+                </span>
+              )
+            })}
+          </div>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border rounded shadow max-h-64 overflow-auto p-2">
+          <input
+            className="w-full mb-2 p-2 border rounded"
+            placeholder="Rechercher..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+
+          <div className="flex flex-col gap-1">
+            {filtered.map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={values.includes(opt.value)}
+                  onChange={() => toggle(opt.value)}
+                />
+                <span>{opt.label}</span>
+              </label>
+            ))}
+
+            {filtered.length === 0 && <div className="text-sm text-gray-500 p-2">Aucun résultat</div>}
+          </div>
+
+          <div className="mt-2 flex justify-end gap-2">
+            <button type="button" className="px-3 py-1 border rounded" onClick={() => { setQuery(''); onValueChange([]) }}>
+              Tout désélectionner
+            </button>
+            <button type="button" className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => setOpen(false)}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const generalSchema = z.object({
+  firstname: z.string().min(1, 'Le prénom est requis'),
+  lastname: z.string().min(1, 'Le nom est requis'),
+  email: z.string().email('Email invalide'),
+})
+
+const talentSchema = z.object({
+  title: z.string().min(1, 'Le titre est requis'),
+  bio: z.string().min(1, 'La bio est requise'),
+  phone: z.string().min(8, 'Numéro invalide'),
+  location: z.string().min(1, 'La localisation est requise'),
+  linkedinUrl: z.string().url().optional(),
+  githubUrl: z.string().url().optional(),
+  skills: z.array(z.number()).max(10, 'Max 10 compétences'),
+})
 
 const TalentProfile = () => {
   const { user, skills, talentProfile, profileCompletion } = usePage<PageProps>().props
-
   const completionPercent = profileCompletion || 0
-
-  console.log(usePage().props.talentProfile)
-
-
-  // states for dynamic lists
-  const [experiences, setExperiences] = useState(
-    talentProfile?.experiences?.map((e: any) => ({
-      id: e.id ?? null,
-      title: e.title ?? '',
-      company: e.company ?? '',
-      location: e.location ?? '',
-      startDate: e.startDate ?? '',
-      endDate: e.endDate ?? '',
-      current: e.current ?? false,
-      description: e.description ?? '',
-    })) || []
-  )
-
-  const [educations, setEducations] = useState(
-    talentProfile?.educations?.map((e: any) => ({
-      id: e.id ?? null,
-      school: e.school ?? '',
-      degree: e.degree ?? '',
-      field: e.field ?? '',
-      startDate: e.startDate ?? '',
-      endDate: e.endDate ?? '',
-      current: e.current ?? false,
-    })) || []
-  )
-
-  const skillsInitial = talentProfile?.skills?.map((s: any) => s.id) || []
-  const [skillsSelected, setSkillsSelected] = useState<number[]>(skillsInitial)
 
   const avatarRef = useRef<HTMLInputElement | null>(null)
   const cvRef = useRef<HTMLInputElement | null>(null)
-
   const skillsList = Array.isArray(skills) ? skills : []
 
-  const addExperience = () =>
-    setExperiences((prev) => [
-      ...prev,
-      {
-        id: null,
-        title: '',
-        company: '',
-        location: '',
-        startDate: '',
-        endDate: '',
-        current: false,
-        description: '',
-      },
-    ])
-  const removeExperience = (index: number) =>
-    setExperiences((prev) => prev.filter((_, i) => i !== index))
-  const updateExperience = (index: number, patch: Partial<any>) =>
-    setExperiences((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)))
+  const [experiences, setExperiences] = useState(
+    talentProfile?.experiences?.map((e: any) => ({ ...e })) || []
+  )
+  const [educations, setEducations] = useState(
+    talentProfile?.educations?.map((e: any) => ({ ...e })) || []
+  )
+  const [skillsSelected, setSkillsSelected] = useState<number[]>(
+    talentProfile?.skills?.map((s: any) => s.id) || []
+  )
 
-  const addEducation = () =>
-    setEducations((prev) => [
-      ...prev,
-      { id: null, school: '', degree: '', field: '', startDate: '', endDate: '', current: false },
-    ])
-  const removeEducation = (index: number) =>
-    setEducations((prev) => prev.filter((_, i) => i !== index))
-  const updateEducation = (index: number, patch: Partial<any>) =>
-    setEducations((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)))
+  const generalForm = useForm({
+    firstname: user.firstname || '',
+    lastname: user.lastname || '',
+    email: user.email || '',
+  })
 
-  // On limitera pour le moment les competences a 10
+  const talentForm = useForm({
+    title: talentProfile?.title || '',
+    bio: talentProfile?.bio || '',
+    phone: talentProfile?.phone || '',
+    location: talentProfile?.location || '',
+    linkedinUrl: talentProfile?.linkedinUrl || '',
+    githubUrl: talentProfile?.githubUrl || '',
+    skills: skillsSelected,
+    experiences,
+    educations,
+  })
+
   const handleSkillsChange = (values: number[]) => {
-    if (values.length > 10) {
-      setSkillsSelected(values.slice(0, 10))
-
-      return
-    }
-    setSkillsSelected(values)
+    const limited = values.slice(0, 10)
+    setSkillsSelected(limited)
+    talentForm.setData('skills', limited)
   }
 
-  const handleSubmitTalent = (e: React.FormEvent) => {
+  const addExperience = () =>
+    setExperiences((prev: any) => {
+      const updated = [
+        ...prev,
+        {
+          id: null,
+          title: '',
+          company: '',
+          location: '',
+          startDate: '',
+          endDate: '',
+          current: false,
+          description: '',
+        },
+      ]
+      talentForm.setData('experiences', updated)
+      return updated
+    })
+
+  const removeExperience = (index: number) =>
+    setExperiences((prev: any) => {
+      const updated = prev.filter((_: any, i: number) => i !== index)
+      talentForm.setData('experiences', updated)
+      return updated
+    })
+
+  const updateExperience = (index: number, patch: Partial<any>) =>
+    setExperiences((prev: any) => {
+      const updated = prev.map((e: any, i: number) => (i === index ? { ...e, ...patch } : e))
+      talentForm.setData('experiences', updated)
+      return updated
+    })
+
+  const addEducation = () =>
+    setEducations((prev: any) => {
+      const updated = [
+        ...prev,
+        {
+          id: null,
+          school: '',
+          degree: '',
+          field: '',
+          startDate: '',
+          endDate: '',
+          current: false,
+        },
+      ]
+      talentForm.setData('educations', updated)
+      return updated
+    })
+
+  const removeEducation = (index: number) =>
+    setEducations((prev: any[]) => {
+      const updated = prev.filter((_: any, i: number) => i !== index)
+      talentForm.setData('educations', updated)
+      return updated
+    })
+
+  const updateEducation = (index: number, patch: Partial<any>) =>
+    setEducations((prev: any[]) => {
+      const updated = prev.map((e: any, i: number) => (i === index ? { ...e, ...patch } : e))
+      talentForm.setData('educations', updated)
+      return updated
+    })
+
+    const submitGeneral = (e: React.FormEvent) => {
+    const validation = generalSchema.safeParse(generalForm.data)
+    if (!validation.success) return alert(JSON.stringify(validation.error.format(), null, 2))
+    const formData = new FormData()
+    formData.append('_method', 'PUT')
+    formData.append('type', 'general')
+    Object.entries(generalForm.data).forEach(([key, value]) =>
+      formData.append(key, value as string)
+    )
+    const avatarFile = avatarRef.current?.files?.[0]
+    if (avatarFile) formData.append('profileFile', avatarFile)
+    router.post(`/talent/profile/${user.id}`, formData)
+  }
+
+  const submitTalent = (e: React.FormEvent) => {
     e.preventDefault()
-    const form = new FormData()
 
-    form.append('_method', 'PUT')
-    form.append('type', 'talent')
+    const finalData = {
+      ...talentForm.data,
+      skills: skillsSelected,
+      experiences,
+      educations,
+    }
 
-    const titleInput =
-      (document.querySelector('input[name="title"]') as HTMLInputElement | null)?.value || ''
-    const bioInput =
-      (document.querySelector('textarea[name="bio"]') as HTMLTextAreaElement | null)?.value || ''
-    const phoneInput =
-      (document.querySelector('input[name="phone"]') as HTMLInputElement | null)?.value || ''
-    const locationInput =
-      (document.querySelector('input[name="location"]') as HTMLInputElement | null)?.value || ''
-    const linkedinInput =
-      (document.querySelector('input[name="linkedinUrl"]') as HTMLInputElement | null)?.value || ''
-    const githubInput =
-      (document.querySelector('input[name="githubUrl"]') as HTMLInputElement | null)?.value || ''
+    const validation = talentSchema.safeParse(finalData)
+    if (!validation.success) return alert(JSON.stringify(validation.error.format(), null, 2))
 
-    form.append('title', titleInput)
-    form.append('bio', bioInput)
-    form.append('phone', phoneInput)
-    form.append('location', locationInput)
-    form.append('linkedinUrl', linkedinInput)
-    form.append('githubUrl', githubInput)
+    const formData = new FormData()
+    formData.append('_method', 'PUT')
+    formData.append('type', 'talent')
 
-    form.append('skills', JSON.stringify(skillsSelected))
-
-    form.append('experiences', JSON.stringify(experiences))
-    form.append('educations', JSON.stringify(educations))
+    Object.entries(finalData).forEach(([key, value]) => {
+      if (Array.isArray(value) || typeof value === 'object') {
+        formData.append(key, JSON.stringify(value))
+      } else {
+        formData.append(key, value ?? '')
+      }
+    })
 
     const cvFile = cvRef.current?.files?.[0]
-    if (cvFile) form.append('cv', cvFile)
+    if (cvFile) formData.append('cv', cvFile)
 
-    const url = `/talent/profile/${user.id}`
-    router.post(url, form)
+    router.post(`/talent/profile/${user.id}`, formData)
   }
 
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto py-10 space-y-8">
-        {/* GENERAL FORM (avatar + basic user fields) */}
-        <form
-          method="POST"
-          action={`/talent/profile/${user.id}`}
-          encType="multipart/form-data"
-          className="space-y-6"
-        >
-          <Input className="mt-4" type="hidden" name="_method" value="PUT" />
-          <Input className="mt-4" type="hidden" name="type" value="general" />
-
+        {/* GENERAL FORM */}
+        <form onSubmit={submitGeneral} className="space-y-6" encType="multipart/form-data">
+          <Input type="hidden" name="_method" value="PUT" />
+          <Input type="hidden" name="type" value="general" />
           {/* Avatar */}
           <Card className="p-6 flex items-center space-x-4">
             <div className="relative w-24 h-24">
@@ -165,23 +290,19 @@ const TalentProfile = () => {
                 {user.profile ? (
                   <img
                     src={user.profile}
-                    alt={`${user.firstname}`}
+                    alt={user.firstname}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <UserIcon className="w-10 h-10 text-gray-400" />
                 )}
               </div>
-
-              {/* invisible file input overlayed, triggered by label */}
               <label
                 htmlFor="profileFile"
                 className="absolute inset-0 rounded-full cursor-pointer"
-                aria-label="Changer photo"
                 title="Changer la photo"
               />
             </div>
-
             <div>
               <Label>Changer la photo de profil</Label>
               <Input
@@ -201,20 +322,35 @@ const TalentProfile = () => {
             <CardContent className="mt-4 grid gap-4">
               <div>
                 <Label>Prénom</Label>
-                <Input className="mt-4" name="firstname" defaultValue={user.firstname} />
+                <Input
+                  className="mt-4"
+                  name="firstname"
+                  value={generalForm.data.firstname}
+                  onChange={(e) => generalForm.setData('firstname', e.target.value)}
+                />
               </div>
               <div>
                 <Label>Nom</Label>
-                <Input className="mt-4" name="lastname" defaultValue={user.lastname} />
+                <Input
+                  className="mt-4"
+                  name="lastname"
+                  value={generalForm.data.lastname}
+                  onChange={(e) => generalForm.setData('lastname', e.target.value)}
+                />
               </div>
               <div>
                 <Label>Email</Label>
-                <Input className="mt-4" name="email" defaultValue={user.email} />
+                <Input
+                  className="mt-4"
+                  name="email"
+                  value={generalForm.data.email}
+                  onChange={(e) => generalForm.setData('email', e.target.value)}
+                />
               </div>
               <div className="flex gap-2 mt-4">
                 <Button
-                  className="bg-green-600 border rounded-xl border-green-600 text-white hover:bg-white hover:text-green-600 transition-all duration-500"
                   type="submit"
+                  className="bg-green-600 border rounded-xl border-green-600 text-white hover:bg-white hover:text-green-600 transition-all duration-500"
                 >
                   Enregistrer informations générales
                 </Button>
@@ -223,36 +359,49 @@ const TalentProfile = () => {
           </Card>
         </form>
 
-        {/* TALENT FORM (skills, CV, experiences, educations) */}
-        <form onSubmit={handleSubmitTalent} className="space-y-6">
+        {/* TALENT FORM */}
+        <form onSubmit={submitTalent} className="space-y-6">
+          {' '}
           <Card className="p-6">
             <CardTitle>Informations Talent</CardTitle>
             <CardContent className="mt-4 grid gap-4">
               <div>
                 <Label>Titre</Label>
-                <Input className="mt-4" name="title" defaultValue={talentProfile?.title || ''} />
+                <Input
+                  className="mt-4"
+                  name="title"
+                  value={talentForm.data.title}
+                  onChange={(e) => talentForm.setData('title', e.target.value)}
+                />
               </div>
 
               <div>
                 <Label>Bio</Label>
                 <textarea
                   name="bio"
-                  defaultValue={talentProfile?.bio || ''}
                   className="border px-3 py-2 mt-2 rounded w-full"
+                  value={talentForm.data.bio}
+                  onChange={(e) => talentForm.setData('bio', e.target.value)}
                 />
               </div>
 
               <div>
                 <Label>Téléphone</Label>
-                <Input className="mt-4" name="phone" defaultValue={talentProfile?.phone || ''} />
+                <Input
+                  className="mt-4"
+                  name="phone"
+                  value={talentForm.data.phone}
+                  onChange={(e) => talentForm.setData('phone', e.target.value)}
+                />
               </div>
 
               <div>
-                <Label>Localisation</Label>
+                <Label>Adresse</Label>
                 <Input
                   className="mt-4"
                   name="location"
-                  defaultValue={talentProfile?.location || ''}
+                  value={talentForm.data.location}
+                  onChange={(e) => talentForm.setData('location', e.target.value)}
                 />
               </div>
 
@@ -261,7 +410,8 @@ const TalentProfile = () => {
                 <Input
                   className="mt-4"
                   name="linkedinUrl"
-                  defaultValue={talentProfile?.linkedinUrl || ''}
+                  value={talentForm.data.linkedinUrl}
+                  onChange={(e) => talentForm.setData('linkedinUrl', e.target.value)}
                 />
               </div>
 
@@ -270,36 +420,40 @@ const TalentProfile = () => {
                 <Input
                   className="mt-4"
                   name="githubUrl"
-                  defaultValue={talentProfile?.githubUrl || ''}
+                  value={talentForm.data.githubUrl}
+                  onChange={(e) => talentForm.setData('githubUrl', e.target.value)}
                 />
               </div>
 
               {/* Commpetences */}
               <div>
                 <Label>Compétences (max 10)</Label>
-                {/* <Select
-                  multiple
-                  value={skillsSelected}
-                  onValueChange={(values: number[]) => handleSkillsChange(values)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner des compétences" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {skillsList.map((skill: any) => (
-                      <SelectItem key={skill.id} value={skill.id}>
-                        {skill.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select> */}
 
-                <MultiSelect
-                  options={skills.map((skill) => ({
+                <SearchableMultiSelect
+                  options={skillsList.map((s: any) => ({ label: s.name, value: s.id }))}
+                  values={skillsSelected}
+                  onValueChange={handleSkillsChange}
+                  placeholder="Sélectionner des compétences"
+                />
+
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {skillsSelected.map((id) => {
+                    const s = skillsList.find((x: any) => x.id === id)
+                    return (
+                      <span key={id} className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm">
+                        {s?.name || id}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+
+                {/* <MultiSelect
+                  options={skills.map((skill: any) => ({
                     label: skill.name,
                     value: skill.id,
                   }))}
-                  onValueChange={(values) => setSkillsSelected(values)}
+                  onValueChange={(values: any) => setSkillsSelected(values)}
                   placeholder="Sélectionner des compétences"
                 />
 
@@ -316,7 +470,7 @@ const TalentProfile = () => {
                     )
                   })}
                 </div>
-              </div>
+              </div> */}
 
               {/* Envoie de CV */}
               <div>
@@ -369,7 +523,7 @@ const TalentProfile = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {experiences.map((exp, i) => (
+                    {experiences.map((exp: any, i: number) => (
                       <tr key={i} className="border-t">
                         <td className="p-2">
                           <Input
@@ -452,56 +606,67 @@ const TalentProfile = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {educations.map((edu, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="p-2">
-                          <Input
-                            className="mt-4"
-                            value={edu.school}
-                            onChange={(e) => updateEducation(i, { school: e.target.value })}
-                          />
-                        </td>
-                        <td className="p-2">
-                          <Input
-                            className="mt-4"
-                            value={edu.degree}
-                            onChange={(e) => updateEducation(i, { degree: e.target.value })}
-                          />
-                        </td>
-                        <td className="p-2">
-                          <Input
-                            className="mt-4"
-                            value={edu.field}
-                            onChange={(e) => updateEducation(i, { field: e.target.value })}
-                          />
-                        </td>
-                        <td className="p-2">
-                          <Input
-                            className="mt-4"
-                            type="date"
-                            value={edu.startDate}
-                            onChange={(e) => updateEducation(i, { startDate: e.target.value })}
-                          />
-                        </td>
-                        <td className="p-2">
-                          <Input
-                            className="mt-4"
-                            type="date"
-                            value={edu.endDate}
-                            onChange={(e) => updateEducation(i, { endDate: e.target.value })}
-                          />
-                        </td>
-                        <td className="p-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => removeEducation(i)}
-                          >
-                            Supprimer
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {educations.map(
+                      (
+                        edu: {
+                          school: string | number | readonly string[] | undefined
+                          degree: string | number | readonly string[] | undefined
+                          field: string | number | readonly string[] | undefined
+                          startDate: string | number | readonly string[] | undefined
+                          endDate: string | number | readonly string[] | undefined
+                        },
+                        i: React.Key | null | undefined
+                      ) => (
+                        <tr key={i} className="border-t">
+                          <td className="p-2">
+                            <Input
+                              className="mt-4"
+                              value={edu.school}
+                              onChange={(e) => updateEducation(i, { school: e.target.value })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              className="mt-4"
+                              value={edu.degree}
+                              onChange={(e) => updateEducation(i, { degree: e.target.value })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              className="mt-4"
+                              value={edu.field}
+                              onChange={(e) => updateEducation(i, { field: e.target.value })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              className="mt-4"
+                              type="date"
+                              value={edu.startDate}
+                              onChange={(e) => updateEducation(i, { startDate: e.target.value })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              className="mt-4"
+                              type="date"
+                              value={edu.endDate}
+                              onChange={(e) => updateEducation(i, { endDate: e.target.value })}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeEducation(i)}
+                            >
+                              Supprimer
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    )}
                     {educations.length === 0 && (
                       <tr>
                         <td colSpan={6} className="p-4 text-sm text-gray-500">

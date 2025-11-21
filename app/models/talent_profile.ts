@@ -17,6 +17,7 @@ export default class TalentProfile extends BaseModel {
   @column() declare location: string | null
   @column() declare isAvailable: string | null
   @column() declare cvUrl: string | null
+  @column() declare cvPath: string | null
   @column() declare linkedinUrl: string | null
   @column() declare githubUrl: string | null
 

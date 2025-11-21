@@ -1,13 +1,13 @@
-// app/services/talent_service.ts
 import TalentProfile from '#models/talent_profile'
 import User from '#models/user'
 import Skill from '#models/skill'
 import TalentEducation from '#models/talent_education'
 import TalentExperience from '#models/talent_experience'
-import { cuid } from '@adonisjs/core/helpers'
-import drive from '@adonisjs/drive/services/main'
-import { Exception } from '@adonisjs/core/exceptions'
 import TalentSkill from '#models/talent_skill'
+// import { cuid } from '@adonisjs/core/helpers'
+// import drive from '@adonisjs/drive/services/main'
+import { MultipartFile } from '@adonisjs/core/bodyparser'
+import { deleteFile, uploadFile } from '#helpers/fileUploader'
 
 interface TalentFilters {
   search?: string
@@ -25,9 +25,9 @@ interface UpdateTalentData {
   isAvailable?: string | null
   linkedinUrl?: string | null
   githubUrl?: string | null
-  cv?: any
+  cv?: MultipartFile | null
   skills?: { skillId: number; level?: number }[]
-  experiences?: Array<{
+  experiences?: {
     id?: number
     title: string
     company: string
@@ -36,8 +36,8 @@ interface UpdateTalentData {
     endDate?: string | null
     current?: boolean
     description?: string
-  }>
-  educations?: Array<{
+  }[]
+  educations?: {
     id?: number
     school: string
     degree: string
@@ -45,378 +45,292 @@ interface UpdateTalentData {
     startDate: string
     endDate?: string | null
     current?: boolean
-  }>
-}
-
-interface TalentResponse {
-  data: (TalentProfile & { user: User })[]
-  meta: {
-    total: number
-    per_page: number
-    current_page: number
-    last_page: number
-  }
+  }[]
 }
 
 export class TalentService {
   /**
-   * Récupère les talents depuis TalentProfile
+   * Chargement manuel des relations
    */
-  async getTalents(filters: TalentFilters = {}): Promise<TalentResponse> {
+  private async loadTalentRelations(talent: TalentProfile) {
+    const user = await User.find(talent.userId)
+
+    const skillsPivot = await TalentSkill.query()
+      .where('talent_id', talent.id)
+      .select(['id', 'talent_id', 'skill_id', 'level', 'is_validated'])
+
+    const skillIds = skillsPivot.map((s) => s.skill_id)
+
+    const skills = skillIds.length ? await Skill.query().whereIn('id', skillIds) : []
+
+    const skillsWithPivot = skills.map((skill) => {
+      const pivot = skillsPivot.find((p) => p.skill_id === skill.id)
+      return {
+        ...skill.toJSON(),
+        pivot: {
+          level: pivot?.level ?? 1,
+          is_validated: pivot?.is_validated ?? false,
+        },
+      }
+    })
+
+    const experiences = await TalentExperience.query()
+      .where('talent_id', talent.id)
+      .orderBy('start_date', 'desc')
+
+    const educations = await TalentEducation.query()
+      .where('talent_id', talent.id)
+      .orderBy('start_date', 'desc')
+
+    return {
+      user,
+      skills: skillsWithPivot,
+      experiences,
+      educations,
+    }
+  }
+
+  /**
+   * Récupération multiple sans preload
+   */
+  async getTalents(filters: TalentFilters = {}) {
     const { search = '', skills = [], location = '', page = 1, limit = 20 } = filters
 
-    const query = TalentProfile.query()
-      .preload('user')
-      .preload('skills')
-      .preload('experiences')
-      .preload('educations')
-      .whereNull('deleted_at')
+    const query = TalentProfile.query().whereNull('deleted_at')
 
-    // Recherche a partir des filtres si definies
     if (search) {
-      query
-        .whereHas('user', (user) => {
-          user.whereILike('firstname', `%${search}%`).orWhereILike('lastname', `%${search}%`)
-        })
-        .orWhereILike('title', `%${search}%`)
-        .orWhereILike('bio', `%${search}%`)
+      query.whereILike('title', `%${search}%`).orWhereILike('bio', `%${search}%`)
     }
 
     if (location) {
       query.whereILike('location', `%${location}%`)
     }
 
+    // On filtre juste les talent_ids via pivot
     if (skills.length > 0) {
-      query.whereHas('skills', (skillQuery) => {
-        skillQuery.whereIn('name', skills)
-      })
+      const matching = await TalentSkill.query().whereIn('skill_id', skills).select('talent_id')
+
+      const ids = matching.map((m) => m.talent_id)
+
+      if (ids.length === 0)
+        return { data: [], meta: { total: 0, per_page: limit, current_page: page, last_page: 1 } }
+
+      query.whereIn('id', ids)
     }
 
     const result = await query.paginate(page, limit)
 
+    const data = []
+    for (const talent of result.all()) {
+      const relations = await this.loadTalentRelations(talent)
+      data.push({
+        ...talent.toJSON(),
+        ...relations,
+      })
+    }
+
     return {
-      data: result.all(),
+      data,
       meta: result.getMeta(),
     }
   }
 
   /**
-   * Récuperer un talent par son ID
-   * @param talentId ID du profil talent
+   * Récupération d'un talent (sans preload)
    */
   async getTalent(talentId: number) {
-    return TalentProfile.query()
-      .where('id', talentId)
-      .preload('user')
-      .preload('skills')
-      .preload('experiences')
-      .preload('educations')
-      .first()
+    const talent = await TalentProfile.find(talentId)
+    if (!talent) return null
+
+    const relations = await this.loadTalentRelations(talent)
+
+    return {
+      ...talent.toJSON(),
+      ...relations,
+    }
   }
 
   /**
-   * Création du profil talent si l'utilisateur n'en possède pas encore
-   * @param userId ID de l'utilisateur
-   * @param data Données du profil talent à créer
+   * Création du profil talent
    */
-  async createTalent(userId: number, data: UpdateTalentData): Promise<TalentProfile> {
-    const {
-      phone,
-      title,
-      bio,
-      location,
-      isAvailable,
-      linkedinUrl,
-      githubUrl,
-      cv,
-      skills,
-      experiences,
-      educations,
-    } = data
+  async createTalent(userId: number, data: UpdateTalentData) {
+    const talentProfile = await TalentProfile.create({
+      userId,
+      phone: data.phone ?? null,
+      title: data.title ?? '',
+      bio: data.bio ?? '',
+      location: data.location ?? '',
+      isAvailable: data.isAvailable ?? 'no',
+      linkedinUrl: data.linkedinUrl ?? '',
+      githubUrl: data.githubUrl ?? '',
+    })
 
-    const user = await User.query().where('id', userId).preload('talentProfile').firstOrFail()
-
-    if (user.talentProfile) {
-      throw new Error('L’utilisateur possède déjà un profil talent. Utilisez updateTalent.')
+    if (data.cv) {
+      const { url, path } = await uploadFile(data.cv, 'cvs')
+      talentProfile.cvUrl = url
+      talentProfile.cvPath = path
+      await talentProfile.save()
     }
 
-    const talentProfile = new TalentProfile()
-    talentProfile.userId = user.id
-    talentProfile.phone = phone || null
-    talentProfile.title = title || null
-    talentProfile.bio = bio || null
-    talentProfile.location = location || null
-    talentProfile.isAvailable = isAvailable || null
-    talentProfile.linkedinUrl = linkedinUrl || null
-    talentProfile.githubUrl = githubUrl || null
-
-    // Upload CV si fourni
-    if (cv) {
-      const fileName = `${cuid()}.${cv.extname}`
-      await cv.moveToDisk('cvs', { name: fileName }, 'local')
-      talentProfile.cvUrl = await drive.use().getUrl(`cvs/${fileName}`)
-    }
-
-    await talentProfile.save()
-
-    // Ajouter les compétences
-    if (skills && skills.length > 0) {
-      const validSkillIds = await Skill.query()
-        .whereIn(
-          'id',
-          skills.map((s) => s.skillId)
-        )
-        .select('id')
-      const validIds = validSkillIds.map((s) => s.id)
-      if (validIds.length !== skills.length) {
-        throw new Error('Une ou plusieurs compétences sont invalides.')
-      }
-
-      const attachData: Record<number, { level: number }> = {}
-      for (const { skillId, level } of skills) {
-        attachData[skillId] = { level: level || 1 }
-      }
-      await talentProfile.related('skills').attach(attachData)
-    }
-
-    // Ajouter les expériences
-    if (experiences && experiences.length > 0) {
-      for (const exp of experiences) {
-        await talentProfile.related('experiences').create({
-          job_title: exp.title,
-          company_name: exp.company,
-          location: exp.location || null,
-          start_at: exp.startDate,
-          end_at: exp.current ? null : exp.endDate,
-          is_current: exp.current || false,
-          description: exp.description || null,
-        })
-      }
-    }
-
-    // Ajouter les formations
-    if (educations && educations.length > 0) {
-      for (const edu of educations) {
-        await talentProfile.related('educations').create({
+    // Skills
+    if (data.skills?.length) {
+      for (const s of data.skills) {
+        await TalentSkill.create({
           talent_id: talentProfile.id,
-          degree: edu.degree,
-          institution: edu.school,
-          start_at: edu.startDate,
-          end_at: edu.current ? null : edu.endDate,
-          is_current: edu.current || false,
+          skill_id: s.skillId,
+          level: s.level ?? 1,
+          is_validated: false,
         })
       }
     }
 
-    // Recharger relations pour retour complet
-    await talentProfile.load('user')
-    await talentProfile.load('skills')
-    await talentProfile.load('experiences')
-    await talentProfile.load('educations')
-
-    return talentProfile
-  }
-
-  /**
-   * Mise à jour des informations du profil talent
-   * @param talentId ID du profil talent
-   * @param data Données à mettre à jour
-   * @param userId ID de l'utilisateur
-   */
-  async updateTalent(
-    talentId: number,
-    data: UpdateTalentData,
-    userId: number
-  ): Promise<any> {
-    const {
-      phone,
-      title,
-      bio,
-      location,
-      isAvailable,
-      linkedinUrl,
-      githubUrl,
-      cv,
-      skills,
-      experiences,
-      educations,
-    } = data
-
-    const talentProfile = await TalentProfile.query()
-      .where('id', talentId)
-      .firstOrFail()
-
-    if (talentProfile.userId !== userId) {
-      throw new Error("Vous n'êtes pas autorisé à effectuer cette action.")
-    }
-
-    if (phone !== undefined) talentProfile.phone = phone
-    if (title !== undefined) talentProfile.title = title
-    if (bio !== undefined) talentProfile.bio = bio
-    if (location !== undefined) talentProfile.location = location
-    if (isAvailable !== undefined) talentProfile.isAvailable = isAvailable
-    if (linkedinUrl !== undefined) talentProfile.linkedinUrl = linkedinUrl
-    if (githubUrl !== undefined) talentProfile.githubUrl = githubUrl
-
-    if (cv) {
-      const fileName = `${cuid()}.${cv.extname}`
-      await cv.moveToDisk('cvs', { name: fileName }, 'local')
-      talentProfile.cvUrl = await drive.use().getUrl(`cvs/${fileName}`)
-    }
-
-    if(skills !== undefined && Array.isArray(skills) && skills.length > 0) {
-      const skillIds = skills.map((s: any) => (s.skillId !== undefined ? s.skillId : s))
-      const validSkillIds = await Skill.query()
-        .whereIn('id', skillIds)
-        .select('id')
-
-      const validIds = validSkillIds.map((s) => s.id)
-
-      if (validIds.length !== skillIds.length) {
-        throw new Error('Une ou plusieurs compétences sont invalides.')
+    // Experiences
+    if (data.experiences?.length) {
+      for (const exp of data.experiences) {
+        await TalentExperience.create({
+          talent_id: talentProfile.id,
+          job_title: exp.title ?? '', // ← valeur par défaut
+          company_name: exp.company ?? '', // ← valeur par défaut
+          location: exp.location ?? '',
+          start_at: exp.startDate ?? new Date().toISOString(),
+          end_at: exp.current ? null : (exp.endDate ?? null),
+          is_current: exp.current ?? false,
+          description: exp.description ?? '',
+        })
       }
-
-      await talentProfile.related('skills').detach()
-
-      const attachData: Record<number, { level: number }> = {}
-      for (const s of skills) {
-        const id = s.skillId !== undefined ? s.skillId : s
-        attachData[id] = { level: s.level || 1 }
-      }
-
-      await talentProfile.related('skills').attach(attachData)
     }
-// A corriger
-    // if (experiences !== undefined) {
-    //   const existing = await TalentExperience.query()
-    //     .where('talent_profile_id', talentId)
-    //     .select('id')
 
-    //   const existingIds = existing.map((e) => e.id)
-    //   const incomingIds = experiences.map((e) => e.id).filter(Boolean)
+    // Educations
+    if (data.educations?.length) {
+      for (const edu of data.educations) {
+        await TalentEducation.create({
+          talent_id: talentProfile.id,
+          institution: edu.school ?? '',
+          degree: edu.degree ?? '',
+          description: edu.field ?? '',
+          start_at: edu.startDate ?? new Date().toISOString(),
+          end_at: edu.current ? null : (edu.endDate ?? null),
+          is_current: edu.current ?? false,
+        })
+      }
+    }
 
-    //   const toDelete = existingIds.filter((id) => !incomingIds.includes(id))
-
-    //   if (toDelete.length > 0) {
-    //     await TalentExperience.query()
-    //       .whereIn('id', toDelete)
-    //       .where('talent_profile_id', talentId)
-    //       .delete()
-    //   }
-
-    //   for (const exp of experiences) {
-    //     const payload = {
-    //       title: exp.title,
-    //       company: exp.company,
-    //       location: exp.location,
-    //       start_date: exp.startDate,
-    //       end_date: exp.current ? null : exp.endDate,
-    //       current: exp.current || false,
-    //       description: exp.description,
-    //     }
-
-    //     if (exp.id) {
-    //       await TalentExperience.query().where('id', exp.id).update(payload)
-    //     } else {
-    //       await TalentExperience.create({
-    //         talent_id: talentId,
-    //         ...payload,
-    //       })
-    //     }
-    //   }
-    // }
-
-
-    // if (educations !== undefined) {
-    //   const existing = await TalentEducation.query()
-    //     .where('talent_profile_id', talentId)
-    //     .select('id')
-
-    //   const existingIds = existing.map((e) => e.id)
-    //   const incomingIds = educations.map((e) => e.id).filter(Boolean)
-
-    //   const toDelete = existingIds.filter((id) => !incomingIds.includes(id))
-
-    //   if (toDelete.length > 0) {
-    //     await TalentEducation.query()
-    //       .whereIn('id', toDelete)
-    //       .where('talent_profile_id', talentId)
-    //       .delete()
-    //   }
-
-    //   for (const edu of educations) {
-    //     const payload = {
-    //       school: edu.school,
-    //       degree: edu.degree,
-    //       field: edu.field,
-    //       start_date: edu.startDate,
-    //       end_date: edu.current ? null : edu.endDate,
-    //       current: edu.current || false,
-    //     }
-
-    //     if (edu.id) {
-    //       await TalentEducation.query().where('id', edu.id).update(payload)
-    //     } else {
-    //       await TalentEducation.create({
-    //         talent_id: talentId,
-    //         ...payload,
-    //       })
-    //     }
-    //   }
-    // }
-
-    await talentProfile.save()
-
-    /**
-     * Retour formaté (sans preload)
-     */
-    const talentSkills = await TalentSkill.query().where('talent_id', talentId)
-    const talentExperience = await TalentExperience.query().where('talent_profile_id', talentId)
-    const talentEducation = await TalentEducation.query().where('talent_profile_id', talentId)
+    const relations = await this.loadTalentRelations(talentProfile)
 
     return {
       ...talentProfile.toJSON(),
-      skills: talentSkills,
-      experiences: talentExperience,
-      educations: talentEducation,
+      ...relations,
     }
   }
 
+  /**
+   * Mise à jour du profil talent
+   */
+  async updateTalent(talentId: number, data: UpdateTalentData, userId: number) {
+    const talent = await TalentProfile.findOrFail(talentId)
+
+    if (talent.userId !== userId) {
+      throw new Error('Action non autorisée.')
+    }
+
+    Object.assign(talent, {
+      phone: data.phone ?? talent.phone,
+      title: data.title ?? talent.title,
+      bio: data.bio ?? talent.bio,
+      location: data.location ?? talent.location,
+      isAvailable: data.isAvailable ?? talent.isAvailable,
+      linkedinUrl: data.linkedinUrl ?? talent.linkedinUrl,
+      githubUrl: data.githubUrl ?? talent.githubUrl,
+    })
+
+    if (data.cv) {
+      // 1. Supprimer l’ancien CV s’il existe
+      if (talent.cvUrl) {
+        await deleteFile(talent.cvUrl).catch(() => {})
+      }
+
+      // 2. Uploader le nouveau
+      const { url, path } = await uploadFile(data.cv, 'cvs')
+      talent.cvUrl = url
+      talent.cvPath = path
+    }
+
+    await talent.save()
+
+    /** Skills **/
+    if (data.skills !== undefined) {
+      await TalentSkill.query().where('talent_id', talent.id).delete()
+
+      for (const s of data.skills) {
+        await TalentSkill.create({
+          talent_id: talent.id,
+          skill_id: s.skillId,
+          level: s.level ?? 1,
+          is_validated: false,
+        })
+      }
+    }
+
+    /** Experiences **/
+    if (data.experiences !== undefined) {
+      await TalentExperience.query().where('talent_id', talent.id).delete()
+
+      for (const exp of data.experiences) {
+        await TalentExperience.create({
+          talent_id: talent.id,
+          job_title: exp.title ?? '', // ← obligatoire
+          company_name: exp.company ?? '', // ← obligatoire
+          location: exp.location ?? '',
+          start_at: exp.startDate ?? new Date().toISOString(),
+          end_at: exp.current ? null : (exp.endDate ?? null),
+          is_current: exp.current ?? false,
+          description: exp.description ?? '',
+        })
+      }
+    }
+
+    /** Educations **/
+    if (data.educations !== undefined) {
+      await TalentEducation.query().where('talent_id', talent.id).delete()
+
+      for (const edu of data.educations) {
+        await TalentEducation.create({
+          talent_id: talent.id,
+          institution: edu.school ?? '', // ← obligatoire
+          degree: edu.degree ?? '', // ← obligatoire
+          description: edu.field ?? '',
+          start_at: edu.startDate ?? new Date().toISOString(),
+          end_at: edu.current ? null : (edu.endDate ?? null),
+          is_current: edu.current ?? false,
+        })
+      }
+    }
+
+    const relations = await this.loadTalentRelations(talent)
+
+    return {
+      ...talent.toJSON(),
+      ...relations,
+    }
+  }
 
   /**
-   * Verifier le pourcentage de completion du profil du talent
-   * @param talentId ID du profil talent
+   * Calcul du taux de complétion
    */
-  async getTalentProfileCompletion(user: User): Promise<number> {
-    const checkUser = User.query().where('id', user.id).preload('talentProfile').first()
+  async getTalentProfileCompletion(user: User) {
+    const talent = await TalentProfile.find(user.talentProfile?.id ?? 0)
+    if (!talent) return 0
 
-    if (!checkUser) throw new Error('Utilisateur introuvable')
-    if (!user.talentProfile) return 0
-
-    const talent = await TalentProfile.query()
-      .where('id', user.talentProfile.id)
-      .preload('skills')
-      .preload('experiences')
-      .preload('educations')
-      .firstOrFail()
+    const skills = await TalentSkill.query().where('talent_id', talent.id)
+    const exp = await TalentExperience.query().where('talent_id', talent.id)
+    const edu = await TalentEducation.query().where('talent_id', talent.id)
 
     let completion = 0
 
-    if (talent.phone && talent.bio && talent.location && talent.cvUrl) {
-      completion += 25
-    }
-
-    if (talent.skills.length > 0) {
-      completion += 25
-    }
-
-    if (talent.educations.length > 0) {
-      completion += 25
-    }
-
-    if (talent.experiences.length > 0) {
-      completion += 25
-    }
+    if (talent.phone && talent.bio && talent.location && talent.cvUrl) completion += 25
+    if (skills.length > 0) completion += 25
+    if (exp.length > 0) completion += 25
+    if (edu.length > 0) completion += 25
 
     return completion
   }

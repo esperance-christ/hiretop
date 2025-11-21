@@ -27,6 +27,7 @@ export default class extends BaseSchema {
       table.string('is_available').nullable()
       table.text('bio').nullable()
       table.string('cv_url').nullable()
+      table.string('cv_path').nullable()
       table.string('linkedin_url').nullable()
       table.string('github_url').nullable()
 

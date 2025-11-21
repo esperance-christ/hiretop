@@ -26,6 +26,6 @@ export default class RedirectByRoleMiddleware {
       return response.redirect('/recruiter/dashboard', true)
     }
 
-    // return await next()
+    return await next()
   }
 }
