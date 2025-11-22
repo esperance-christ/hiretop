@@ -42,8 +42,8 @@ export default class extends BaseSchema {
       table.integer('talent_id').unsigned().references('talent_profiles.id').onDelete('CASCADE')
       table.string('degree', 255).notNullable() // intitule du diplome / formation / certification ex. master informatique
       table.string('institution', 255).notNullable() // ecole /universite / centre de formation ex. EPITEC
-      table.integer('start_at').nullable()
-      table.integer('end_at').nullable()
+      table.string('start_at').nullable()
+      table.string('end_at').nullable()
       table.boolean('is_current').defaultTo(false) // si en cours de formation ou terminee.
       table.text('description').nullable()
 
@@ -62,8 +62,8 @@ export default class extends BaseSchema {
       table.string('company_name', 200).notNullable()
       table.string('location', 150).nullable()
       table.boolean('is_current').defaultTo(false)
-      table.date('start_at').notNullable()
-      table.date('end_at').nullable()
+      table.string('start_at').notNullable()
+      table.string('end_at').nullable()
       table.text('description').nullable()
 
       table.timestamp('created_at').defaultTo(this.now())

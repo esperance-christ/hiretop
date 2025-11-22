@@ -4,14 +4,13 @@ import Skill from '#models/skill'
 import TalentEducation from '#models/talent_education'
 import TalentExperience from '#models/talent_experience'
 import TalentSkill from '#models/talent_skill'
-// import { cuid } from '@adonisjs/core/helpers'
-// import drive from '@adonisjs/drive/services/main'
 import { MultipartFile } from '@adonisjs/core/bodyparser'
 import { deleteFile, uploadFile } from '#helpers/fileUploader'
+import { DateTime } from 'luxon'
 
 interface TalentFilters {
   search?: string
-  skills?: string[]
+  skills?: string[] | number[]
   location?: string
   page?: number
   limit?: number
@@ -26,8 +25,8 @@ interface UpdateTalentData {
   linkedinUrl?: string | null
   githubUrl?: string | null
   cv?: MultipartFile | null
-  skills?: { skillId: number; level?: number }[]
-  experiences?: {
+  skills?: string | number[] | { skillId: number; level?: number }[]
+  experiences?: string | {
     id?: number
     title: string
     company: string
@@ -37,7 +36,7 @@ interface UpdateTalentData {
     current?: boolean
     description?: string
   }[]
-  educations?: {
+  educations?: string | {
     id?: number
     school: string
     degree: string
@@ -68,7 +67,7 @@ export class TalentService {
       return {
         ...skill.toJSON(),
         pivot: {
-          level: pivot?.level ?? 1,
+          level: pivot?.level ?? 2,
           is_validated: pivot?.is_validated ?? false,
         },
       }
@@ -76,77 +75,17 @@ export class TalentService {
 
     const experiences = await TalentExperience.query()
       .where('talent_id', talent.id)
-      .orderBy('start_date', 'desc')
+      .orderBy('start_at', 'desc')
 
     const educations = await TalentEducation.query()
       .where('talent_id', talent.id)
-      .orderBy('start_date', 'desc')
+      .orderBy('start_at', 'desc')
 
     return {
       user,
       skills: skillsWithPivot,
       experiences,
       educations,
-    }
-  }
-
-  /**
-   * Récupération multiple sans preload
-   */
-  async getTalents(filters: TalentFilters = {}) {
-    const { search = '', skills = [], location = '', page = 1, limit = 20 } = filters
-
-    const query = TalentProfile.query().whereNull('deleted_at')
-
-    if (search) {
-      query.whereILike('title', `%${search}%`).orWhereILike('bio', `%${search}%`)
-    }
-
-    if (location) {
-      query.whereILike('location', `%${location}%`)
-    }
-
-    // On filtre juste les talent_ids via pivot
-    if (skills.length > 0) {
-      const matching = await TalentSkill.query().whereIn('skill_id', skills).select('talent_id')
-
-      const ids = matching.map((m) => m.talent_id)
-
-      if (ids.length === 0)
-        return { data: [], meta: { total: 0, per_page: limit, current_page: page, last_page: 1 } }
-
-      query.whereIn('id', ids)
-    }
-
-    const result = await query.paginate(page, limit)
-
-    const data = []
-    for (const talent of result.all()) {
-      const relations = await this.loadTalentRelations(talent)
-      data.push({
-        ...talent.toJSON(),
-        ...relations,
-      })
-    }
-
-    return {
-      data,
-      meta: result.getMeta(),
-    }
-  }
-
-  /**
-   * Récupération d'un talent (sans preload)
-   */
-  async getTalent(talentId: number) {
-    const talent = await TalentProfile.find(talentId)
-    if (!talent) return null
-
-    const relations = await this.loadTalentRelations(talent)
-
-    return {
-      ...talent.toJSON(),
-      ...relations,
     }
   }
 
@@ -172,9 +111,21 @@ export class TalentService {
       await talentProfile.save()
     }
 
+    // Parser JSON si nécessaire
+    const skills = typeof data.skills === 'string' ? JSON.parse(data.skills) : data.skills ?? []
+    const experiences = typeof data.experiences === 'string' ? JSON.parse(data.experiences) : data.experiences ?? []
+    const educations = typeof data.educations === 'string' ? JSON.parse(data.educations) : data.educations ?? []
+
     // Skills
-    if (data.skills?.length) {
-      for (const s of data.skills) {
+    for (const s of skills) {
+      if (typeof s === 'number') {
+        await TalentSkill.create({
+          talent_id: talentProfile.id,
+          skill_id: s,
+          level: 1,
+          is_validated: false,
+        })
+      } else if (typeof s === 'object' && s.skillId) {
         await TalentSkill.create({
           talent_id: talentProfile.id,
           skill_id: s.skillId,
@@ -185,42 +136,36 @@ export class TalentService {
     }
 
     // Experiences
-    if (data.experiences?.length) {
-      for (const exp of data.experiences) {
-        await TalentExperience.create({
-          talent_id: talentProfile.id,
-          job_title: exp.title ?? '', // ← valeur par défaut
-          company_name: exp.company ?? '', // ← valeur par défaut
-          location: exp.location ?? '',
-          start_at: exp.startDate ?? new Date().toISOString(),
-          end_at: exp.current ? null : (exp.endDate ?? null),
-          is_current: exp.current ?? false,
-          description: exp.description ?? '',
-        })
-      }
+    for (const exp of experiences) {
+      if (!exp.title || !exp.company) continue
+      await TalentExperience.create({
+        talent_id: talentProfile.id,
+        job_title: exp.title,
+        company_name: exp.company,
+        location: exp.location ?? '',
+        start_at: DateTime.fromISO(exp.startDate),
+        end_at: exp.current ? null : exp.endDate ? DateTime.fromISO(exp.endDate) : null,
+        is_current: exp.current ?? false,
+        description: exp.description ?? '',
+      })
     }
 
     // Educations
-    if (data.educations?.length) {
-      for (const edu of data.educations) {
-        await TalentEducation.create({
-          talent_id: talentProfile.id,
-          institution: edu.school ?? '',
-          degree: edu.degree ?? '',
-          description: edu.field ?? '',
-          start_at: edu.startDate ?? new Date().toISOString(),
-          end_at: edu.current ? null : (edu.endDate ?? null),
-          is_current: edu.current ?? false,
-        })
-      }
+    for (const edu of educations) {
+      if (!edu.school || !edu.degree) continue
+      await TalentEducation.create({
+        talent_id: talentProfile.id,
+        institution: edu.school,
+        degree: edu.degree,
+        description: edu.field ?? '',
+        start_at: DateTime.fromISO(edu.startDate),
+        end_at: edu.current ? null : edu.endDate ? DateTime.fromISO(edu.endDate) : null,
+        is_current: edu.current ?? false,
+      })
     }
 
     const relations = await this.loadTalentRelations(talentProfile)
-
-    return {
-      ...talentProfile.toJSON(),
-      ...relations,
-    }
+    return { ...talentProfile.toJSON(), ...relations }
   }
 
   /**
@@ -228,10 +173,7 @@ export class TalentService {
    */
   async updateTalent(talentId: number, data: UpdateTalentData, userId: number) {
     const talent = await TalentProfile.findOrFail(talentId)
-
-    if (talent.userId !== userId) {
-      throw new Error('Action non autorisée.')
-    }
+    if (talent.userId !== userId) throw new Error('Action non autorisée.')
 
     Object.assign(talent, {
       phone: data.phone ?? talent.phone,
@@ -244,12 +186,7 @@ export class TalentService {
     })
 
     if (data.cv) {
-      // 1. Supprimer l’ancien CV s’il existe
-      if (talent.cvUrl) {
-        await deleteFile(talent.cvUrl).catch(() => {})
-      }
-
-      // 2. Uploader le nouveau
+      if (talent.cvUrl) await deleteFile(talent.cvUrl).catch(() => {})
       const { url, path } = await uploadFile(data.cv, 'cvs')
       talent.cvUrl = url
       talent.cvPath = path
@@ -257,61 +194,60 @@ export class TalentService {
 
     await talent.save()
 
-    /** Skills **/
-    if (data.skills !== undefined) {
-      await TalentSkill.query().where('talent_id', talent.id).delete()
+    // Parser JSON si nécessaire
+    const skills = typeof data.skills === 'string' ? JSON.parse(data.skills) : data.skills ?? []
+    const experiences = typeof data.experiences === 'string' ? JSON.parse(data.experiences) : data.experiences ?? []
+    const educations = typeof data.educations === 'string' ? JSON.parse(data.educations) : data.educations ?? []
 
-      for (const s of data.skills) {
-        await TalentSkill.create({
-          talent_id: talent.id,
-          skill_id: s.skillId,
-          level: s.level ?? 1,
-          is_validated: false,
-        })
+    // Skills
+    if (skills.length > 0) {
+      await TalentSkill.query().where('talent_id', talent.id).delete()
+      for (const s of skills) {
+        if (typeof s === 'number') {
+          await TalentSkill.create({ talent_id: talent.id, skill_id: s, level: 1, is_validated: false })
+        } else if (typeof s === 'object' && s.skillId) {
+          await TalentSkill.create({ talent_id: talent.id, skill_id: s.skillId, level: s.level ?? 1, is_validated: false })
+        }
       }
     }
 
-    /** Experiences **/
-    if (data.experiences !== undefined) {
+    // Experiences
+    if (experiences.length > 0) {
       await TalentExperience.query().where('talent_id', talent.id).delete()
-
-      for (const exp of data.experiences) {
+      for (const exp of experiences) {
+        if (!exp.title || !exp.company) continue
         await TalentExperience.create({
           talent_id: talent.id,
-          job_title: exp.title ?? '', // ← obligatoire
-          company_name: exp.company ?? '', // ← obligatoire
+          job_title: exp.title,
+          company_name: exp.company,
           location: exp.location ?? '',
-          start_at: exp.startDate ?? new Date().toISOString(),
-          end_at: exp.current ? null : (exp.endDate ?? null),
+          start_at: DateTime.fromISO(exp.startDate),
+          end_at: exp.current ? null : exp.endDate ? DateTime.fromISO(exp.endDate) : null,
           is_current: exp.current ?? false,
           description: exp.description ?? '',
         })
       }
     }
 
-    /** Educations **/
-    if (data.educations !== undefined) {
+    // Educations
+    if (educations.length > 0) {
       await TalentEducation.query().where('talent_id', talent.id).delete()
-
-      for (const edu of data.educations) {
+      for (const edu of educations) {
+        if (!edu.school || !edu.degree) continue
         await TalentEducation.create({
           talent_id: talent.id,
-          institution: edu.school ?? '', // ← obligatoire
-          degree: edu.degree ?? '', // ← obligatoire
+          institution: edu.school,
+          degree: edu.degree,
           description: edu.field ?? '',
-          start_at: edu.startDate ?? new Date().toISOString(),
-          end_at: edu.current ? null : (edu.endDate ?? null),
+          start_at: DateTime.fromISO(edu.startDate),
+          end_at: edu.current ? null : edu.endDate ? DateTime.fromISO(edu.endDate) : null,
           is_current: edu.current ?? false,
         })
       }
     }
 
     const relations = await this.loadTalentRelations(talent)
-
-    return {
-      ...talent.toJSON(),
-      ...relations,
-    }
+    return { ...talent.toJSON(), ...relations }
   }
 
   /**
@@ -326,7 +262,6 @@ export class TalentService {
     const edu = await TalentEducation.query().where('talent_id', talent.id)
 
     let completion = 0
-
     if (talent.phone && talent.bio && talent.location && talent.cvUrl) completion += 25
     if (skills.length > 0) completion += 25
     if (exp.length > 0) completion += 25

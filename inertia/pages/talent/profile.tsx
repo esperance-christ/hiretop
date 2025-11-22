@@ -8,17 +8,18 @@ import { Label } from '~/components/ui/label'
 import { Progress } from '~/components/ui/progress'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
-  DialogClose,
 } from '~/components/ui/dialog'
-import { MultiSelect } from '~/components/ui/multi-select'
-import { User as UserIcon } from 'lucide-react'
 import { z } from 'zod'
+import { User as UserIcon } from 'lucide-react'
 
+// Composant multi-select
 function SearchableMultiSelect({
   options,
   values,
@@ -61,7 +62,10 @@ function SearchableMultiSelect({
             {values.map((v) => {
               const opt = options.find((o) => o.value === v)
               return (
-                <span key={v} className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm">
+                <span
+                  key={v}
+                  className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm"
+                >
                   {opt?.label ?? v}
                 </span>
               )
@@ -78,10 +82,12 @@ function SearchableMultiSelect({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-
           <div className="flex flex-col gap-1">
             {filtered.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
+              <label
+                key={opt.value}
+                className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer"
+              >
                 <input
                   type="checkbox"
                   checked={values.includes(opt.value)}
@@ -90,15 +96,26 @@ function SearchableMultiSelect({
                 <span>{opt.label}</span>
               </label>
             ))}
-
-            {filtered.length === 0 && <div className="text-sm text-gray-500 p-2">Aucun résultat</div>}
+            {filtered.length === 0 && (
+              <div className="text-sm text-gray-500 p-2">Aucun résultat</div>
+            )}
           </div>
-
           <div className="mt-2 flex justify-end gap-2">
-            <button type="button" className="px-3 py-1 border rounded" onClick={() => { setQuery(''); onValueChange([]) }}>
+            <button
+              type="button"
+              className="px-3 py-1 border rounded"
+              onClick={() => {
+                setQuery('')
+                onValueChange([])
+              }}
+            >
               Tout désélectionner
             </button>
-            <button type="button" className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => setOpen(false)}>
+            <button
+              type="button"
+              className="px-3 py-1 bg-blue-600 text-white rounded"
+              onClick={() => setOpen(false)}
+            >
               Fermer
             </button>
           </div>
@@ -108,6 +125,7 @@ function SearchableMultiSelect({
   )
 }
 
+// Validation zod
 const generalSchema = z.object({
   firstname: z.string().min(1, 'Le prénom est requis'),
   lastname: z.string().min(1, 'Le nom est requis'),
@@ -121,25 +139,65 @@ const talentSchema = z.object({
   location: z.string().min(1, 'La localisation est requise'),
   linkedinUrl: z.string().url().optional(),
   githubUrl: z.string().url().optional(),
-  skills: z.array(z.number()).max(10, 'Max 10 compétences'),
+  skills: z.array(z.number()),
 })
 
 const TalentProfile = () => {
-  const { user, skills, talentProfile, profileCompletion } = usePage<PageProps>().props
+  const {
+    user,
+    skills,
+    talentProfile,
+    talentSkills,
+    talentEducation,
+    talentExperience,
+    profileCompletion,
+  } = usePage<PageProps>().props
   const completionPercent = profileCompletion || 0
 
   const avatarRef = useRef<HTMLInputElement | null>(null)
   const cvRef = useRef<HTMLInputElement | null>(null)
   const skillsList = Array.isArray(skills) ? skills : []
 
+  const safeDate = (value: any) => {
+    if (!value) return ''
+    const d = new Date(value)
+    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10)
+  }
+
+  const validSkillIds =
+    talentSkills
+      ?.map((s: any) => s.skillId)
+      ?.filter((id: number) => skillsList.some((skill: any) => skill.id === id)) || []
+
+  const [skillsSelected, setSkillsSelected] = useState<number[]>(validSkillIds) || []
+
+  console.log(talentSkills)
+
   const [experiences, setExperiences] = useState(
-    talentProfile?.experiences?.map((e: any) => ({ ...e })) || []
+    talentExperience?.map((e: any) => ({
+      id: e.id,
+      title: e.jobTitle,
+      company: e.companyName,
+      startDate: safeDate(e.startAt),
+      endDate: safeDate(e.endAt),
+      location: e.location,
+      current: e.current || false,
+      description: e.description || '',
+    })) || []
   )
+
+  console.log(experiences)
+
   const [educations, setEducations] = useState(
-    talentProfile?.educations?.map((e: any) => ({ ...e })) || []
-  )
-  const [skillsSelected, setSkillsSelected] = useState<number[]>(
-    talentProfile?.skills?.map((s: any) => s.id) || []
+    talentEducation?.map((e: any) => ({
+      id: e.id,
+      school: e.institution,
+      degree: e.degree,
+      field: e.description,
+      startDate: safeDate(e.startAt),
+      endDate: safeDate(e.endAt),
+      current: e.current || false,
+    })) || []
   )
 
   const generalForm = useForm({
@@ -161,9 +219,8 @@ const TalentProfile = () => {
   })
 
   const handleSkillsChange = (values: number[]) => {
-    const limited = values.slice(0, 10)
-    setSkillsSelected(limited)
-    talentForm.setData('skills', limited)
+    setSkillsSelected(values)
+    talentForm.setData('skills', values)
   }
 
   const addExperience = () =>
@@ -231,7 +288,8 @@ const TalentProfile = () => {
       return updated
     })
 
-    const submitGeneral = (e: React.FormEvent) => {
+  const submitGeneral = (e: React.FormEvent) => {
+    e.preventDefault()
     const validation = generalSchema.safeParse(generalForm.data)
     if (!validation.success) return alert(JSON.stringify(validation.error.format(), null, 2))
     const formData = new FormData()
@@ -280,10 +338,38 @@ const TalentProfile = () => {
     <MainLayout>
       <div className="max-w-6xl mx-auto py-10 space-y-8">
         {/* GENERAL FORM */}
+        <Dialog>
+          <form>
+            <DialogTrigger asChild>
+              <Button variant="outline">Open Dialog</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Edit profile</DialogTitle>
+                <DialogDescription>
+                  Make changes to your profile here. Click save when you&apos;re done.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <div className="grid gap-3">
+                  <Label htmlFor="name-1">Name</Label>
+                  <Input id="name-1" name="name" defaultValue="Pedro Duarte" />
+                </div>
+                <div className="grid gap-3">
+                  <Label htmlFor="username-1">Username</Label>
+                  <Input id="username-1" name="username" defaultValue="@peduarte" />
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Save changes</Button>
+              </DialogFooter>
+            </DialogContent>
+          </form>
+        </Dialog>
         <form onSubmit={submitGeneral} className="space-y-6" encType="multipart/form-data">
-          <Input type="hidden" name="_method" value="PUT" />
-          <Input type="hidden" name="type" value="general" />
-          {/* Avatar */}
           <Card className="p-6 flex items-center space-x-4">
             <div className="relative w-24 h-24">
               <div className="w-24 h-24 rounded-full overflow-hidden border bg-gray-100 flex items-center justify-center">
@@ -316,7 +402,6 @@ const TalentProfile = () => {
             </div>
           </Card>
 
-          {/* General info inputs */}
           <Card className="p-6">
             <CardTitle>Informations Générales</CardTitle>
             <CardContent className="mt-4 grid gap-4">
@@ -361,10 +446,10 @@ const TalentProfile = () => {
 
         {/* TALENT FORM */}
         <form onSubmit={submitTalent} className="space-y-6">
-          {' '}
           <Card className="p-6">
             <CardTitle>Informations Talent</CardTitle>
             <CardContent className="mt-4 grid gap-4">
+              {/* Titre, Bio, Téléphone, Adresse, LinkedIn, GitHub */}
               <div>
                 <Label>Titre</Label>
                 <Input
@@ -425,54 +510,18 @@ const TalentProfile = () => {
                 />
               </div>
 
-              {/* Commpetences */}
+              {/* Compétences */}
               <div>
                 <Label>Compétences (max 10)</Label>
-
                 <SearchableMultiSelect
                   options={skillsList.map((s: any) => ({ label: s.name, value: s.id }))}
                   values={skillsSelected}
                   onValueChange={handleSkillsChange}
                   placeholder="Sélectionner des compétences"
                 />
-
-                <div className="flex gap-2 flex-wrap mt-2">
-                  {skillsSelected.map((id) => {
-                    const s = skillsList.find((x: any) => x.id === id)
-                    return (
-                      <span key={id} className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm">
-                        {s?.name || id}
-                      </span>
-                    )
-                  })}
-                </div>
               </div>
 
-                {/* <MultiSelect
-                  options={skills.map((skill: any) => ({
-                    label: skill.name,
-                    value: skill.id,
-                  }))}
-                  onValueChange={(values: any) => setSkillsSelected(values)}
-                  placeholder="Sélectionner des compétences"
-                />
-
-                <div className="flex gap-2 flex-wrap mt-2">
-                  {skillsSelected.map((id) => {
-                    const s = skillsList.find((x: any) => x.id === id)
-                    return (
-                      <span
-                        key={id}
-                        className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm"
-                      >
-                        {s?.name || id}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div> */}
-
-              {/* Envoie de CV */}
+              {/* CV */}
               <div>
                 <Label>CV (PDF)</Label>
                 <Input className="mt-4" ref={cvRef} name="cv" type="file" accept=".pdf" />
@@ -483,11 +532,15 @@ const TalentProfile = () => {
                         Voir le CV
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
+                    <DialogContent className="sm:max-w-2xl max-w-full">
                       <DialogHeader>
                         <DialogTitle>CV de {user.firstname}</DialogTitle>
                       </DialogHeader>
-                      <iframe src={talentProfile.cvUrl} className="w-full h-96 border rounded" />
+                      <iframe
+                        src={talentProfile.cvUrl}
+                        className="w-full h-[600px] border rounded"
+                        title="CV PDF"
+                      />
                       <DialogFooter>
                         <DialogClose asChild>
                           <Button variant="outline">Fermer</Button>
@@ -498,20 +551,18 @@ const TalentProfile = () => {
                 )}
               </div>
 
+              {/* Expériences */}
               <div>
                 <div className="flex items-center justify-between">
                   <Label>Expériences</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      className="bg-green-600 text-white hover:bg-green-700"
-                      type="button"
-                      onClick={addExperience}
-                    >
-                      Ajouter
-                    </Button>
-                  </div>
+                  <Button
+                    className="bg-green-600 text-white hover:bg-green-700"
+                    type="button"
+                    onClick={addExperience}
+                  >
+                    Ajouter
+                  </Button>
                 </div>
-
                 <table className="w-full table-auto border mt-2">
                   <thead>
                     <tr>
@@ -527,21 +578,18 @@ const TalentProfile = () => {
                       <tr key={i} className="border-t">
                         <td className="p-2">
                           <Input
-                            className="mt-4"
                             value={exp.title}
                             onChange={(e) => updateExperience(i, { title: e.target.value })}
                           />
                         </td>
                         <td className="p-2">
                           <Input
-                            className="mt-4"
                             value={exp.company}
                             onChange={(e) => updateExperience(i, { company: e.target.value })}
                           />
                         </td>
                         <td className="p-2">
                           <Input
-                            className="mt-4"
                             type="date"
                             value={exp.startDate}
                             onChange={(e) => updateExperience(i, { startDate: e.target.value })}
@@ -549,51 +597,38 @@ const TalentProfile = () => {
                         </td>
                         <td className="p-2">
                           <Input
-                            className="mt-4"
                             type="date"
                             value={exp.endDate}
                             onChange={(e) => updateExperience(i, { endDate: e.target.value })}
                           />
                         </td>
                         <td className="p-2">
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => removeExperience(i)}
-                            >
-                              Supprimer
-                            </Button>
-                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => removeExperience(i)}
+                          >
+                            Supprimer
+                          </Button>
                         </td>
                       </tr>
                     ))}
-                    {experiences.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="p-4 text-sm text-gray-500">
-                          Aucune expérience
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
 
-              {/* Sesction pour les formations */}
+              {/* Formations */}
               <div>
                 <div className="flex items-center justify-between">
                   <Label>Formations</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      className="bg-green-600 text-white hover:bg-green-700"
-                      type="button"
-                      onClick={addEducation}
-                    >
-                      Ajouter
-                    </Button>
-                  </div>
+                  <Button
+                    className="bg-green-600 text-white hover:bg-green-700"
+                    type="button"
+                    onClick={addEducation}
+                  >
+                    Ajouter
+                  </Button>
                 </div>
-
                 <table className="w-full table-auto border mt-2">
                   <thead>
                     <tr>
@@ -606,79 +641,56 @@ const TalentProfile = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {educations.map(
-                      (
-                        edu: {
-                          school: string | number | readonly string[] | undefined
-                          degree: string | number | readonly string[] | undefined
-                          field: string | number | readonly string[] | undefined
-                          startDate: string | number | readonly string[] | undefined
-                          endDate: string | number | readonly string[] | undefined
-                        },
-                        i: React.Key | null | undefined
-                      ) => (
-                        <tr key={i} className="border-t">
-                          <td className="p-2">
-                            <Input
-                              className="mt-4"
-                              value={edu.school}
-                              onChange={(e) => updateEducation(i, { school: e.target.value })}
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Input
-                              className="mt-4"
-                              value={edu.degree}
-                              onChange={(e) => updateEducation(i, { degree: e.target.value })}
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Input
-                              className="mt-4"
-                              value={edu.field}
-                              onChange={(e) => updateEducation(i, { field: e.target.value })}
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Input
-                              className="mt-4"
-                              type="date"
-                              value={edu.startDate}
-                              onChange={(e) => updateEducation(i, { startDate: e.target.value })}
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Input
-                              className="mt-4"
-                              type="date"
-                              value={edu.endDate}
-                              onChange={(e) => updateEducation(i, { endDate: e.target.value })}
-                            />
-                          </td>
-                          <td className="p-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => removeEducation(i)}
-                            >
-                              Supprimer
-                            </Button>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                    {educations.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="p-4 text-sm text-gray-500">
-                          Aucune formation
+                    {educations.map((edu: any, i: number) => (
+                      <tr key={i} className="border-t">
+                        <td className="p-2">
+                          <Input
+                            value={edu.school}
+                            onChange={(e) => updateEducation(i, { school: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={edu.degree}
+                            onChange={(e) => updateEducation(i, { degree: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            value={edu.field}
+                            onChange={(e) => updateEducation(i, { field: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            type="date"
+                            value={edu.startDate}
+                            onChange={(e) => updateEducation(i, { startDate: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            type="date"
+                            value={edu.endDate}
+                            onChange={(e) => updateEducation(i, { endDate: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => removeEducation(i)}
+                          >
+                            Supprimer
+                          </Button>
                         </td>
                       </tr>
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* Niveau de remplissage des informations */}
+              {/* Progress */}
               <div className="mt-4">
                 <p className="text-sm font-medium mb-1">
                   Complétion du profil : {completionPercent}%

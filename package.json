@@ -84,6 +84,8 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/supabase-js": "^2.84.0",
     "@tailwindcss/vite": "^4.1.17",
+    "@tiptap/react": "^3.11.0",
+    "@tiptap/starter-kit": "^3.11.0",
     "@vinejs/vine": "^3.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

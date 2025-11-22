@@ -91,29 +91,45 @@ export class ApplicationService {
     company: Company | null,
     user: User | null
   ): Promise<ApplicationResponse> {
-    const { status = 'PUBLISHED', page = 1, limit = 20 } = filters
-    let result
+    const { status, page = 1, limit = 20 } = filters
+
     const query = Application.query()
       .preload('jobOffer', (q) => q.preload('company'))
       .preload('talent', (q) => q.preload('user'))
-      .where('status', status)
       .whereNull('deleted_at')
+
+    // Appliquer filtre status seulement si défini
+    if (status && status.trim() !== '') {
+      query.where('status', status)
+    }
 
     if (company?.id) {
       query.where('company_id', company.id)
     }
 
-    if (user?.id && (await user.hasRole('TALENT'))) {
-      await user.load('talentProfile')
+    if (user?.id) {
+      const isTalent = await user.hasRole('TALENT')
 
-      if (user.talentProfile?.id) {
+      if (isTalent) {
+        await user.load('talentProfile')
+
+        if (!user.talentProfile?.id) {
+          return {
+            data: [],
+            meta: {
+              total: 0,
+              perPage: limit,
+              currentPage: page,
+              lastPage: 1,
+            },
+          }
+        }
+
         query.where('talent_id', user.talentProfile.id)
-      } else {
-        result = []
       }
     }
 
-    result = await query.paginate(page, limit)
+    const result = await query.paginate(page, limit)
 
     return {
       data: result.all(),
@@ -126,7 +142,7 @@ export class ApplicationService {
    * ---------------------------------------------------
    * Ceci n'est possible que par les Talents
    * @param data Données à creer
-   * @param userId ID de l'utilisateur conectee qui effectue l'operation
+   * @param userId ID de l'utilisateur connecte qui effectue l'operation
    */
   async applyJob(userId: number, data: CreateApplicationData): Promise<Application> {
     const { jobOfferId, message, document, useProfileCV, disponibility } = data
@@ -233,17 +249,20 @@ export class ApplicationService {
    * @param applicationId
    */
   async updateApplication(applicationId: number, userId: number, payload: UpdateApplicationData) {
+    console.log(applicationId, userId, payload)
     const application = await Application.findBy('id', applicationId)
-    const talent = await User.query().where('id', userId).preload('talentProfile').firstOrFail()
+    const user = await User.query().where('id', userId).preload('talentProfile').first()
     if (!application) {
       throw new Exception('Candidature introuvable', { status: 404 })
     }
 
-    if (!talent.talentProfile?.id) {
-      throw new Exception('Vous devez avoir un profil talent pour modifier cette candidature', { status: 403 })
+    if (!user?.talentProfile.id) {
+      throw new Exception('Vous devez avoir un profil talent pour modifier cette candidature', {
+        status: 403,
+      })
     }
 
-    if (application.talentId !== talent.id) {
+    if (application.talentId !== user?.talentProfile.id) {
       throw new Exception('Vous ne pouvez pas modifier cette candidature', { status: 403 })
     }
 

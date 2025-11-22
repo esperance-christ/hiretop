@@ -11,8 +11,10 @@ export default class TalentExperience extends BaseModel {
   @column() declare company_name: string
   @column() declare location: string | null
   @column() declare is_current: boolean
-  @column() declare start_at: string
-  @column() declare end_at: string | null
+  // @column() declare start_at: string
+  // @column() declare end_at: string | null
+  @column.dateTime() declare start_at: DateTime
+  @column.dateTime() declare end_at: DateTime | null
   @column() declare description: string | null
 
   @column.dateTime({ autoCreate: true }) declare createdAt: DateTime

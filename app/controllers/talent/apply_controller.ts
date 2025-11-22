@@ -23,6 +23,8 @@ export default class ApplyController {
       user
     )
 
+    console.log(applications)
+
     return inertia.render('talent/applies', {
       applications,
       meta,

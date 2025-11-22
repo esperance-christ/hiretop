@@ -9,8 +9,10 @@ export default class TalentEducation extends BaseModel {
   @column() declare talent_id: number
   @column() declare degree: string
   @column() declare institution: string
-  @column() declare start_at: string | null
-  @column() declare end_at: string | null
+  // @column() declare start_at: string
+  // @column() declare end_at: string | null
+  @column.dateTime() declare start_at: DateTime
+  @column.dateTime() declare end_at: DateTime | null
   @column() declare is_current: boolean
   @column() declare description: string | null
 

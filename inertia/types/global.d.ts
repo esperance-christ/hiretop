@@ -48,7 +48,7 @@ declare global {
     isActive: boolean
     publishedAt?: DateTime | null
     expireAt?: DateTime | null
-    createdAt: DateTime
+    createdAt: string
     updatedAt?: DateTime | null
     deletedAt?: DateTime | null
     company: Company
@@ -161,6 +161,8 @@ declare global {
     offers: JobOffer[]
     applications: Application[]
     meta: {
+      nextPageUrl: any
+      previousPageUrl: any
       total: number
       perPage: number
       currentPage: number

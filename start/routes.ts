@@ -18,6 +18,7 @@ import LogoutController from '#controllers/auth/logout_controller'
 import DashboardController from '#controllers/talent/dashboard_controller'
 import ApplyController from '#controllers/talent/apply_controller'
 import ProfileController from '#controllers/talent/profile_controller'
+import JobsController from '#controllers/talent/jobs_controller'
 
 router.on('/').renderInertia('home').use(middleware.guest())
 
@@ -63,15 +64,23 @@ router
 
     // Candidatures du talent
     router.get('/applies', [ApplyController, 'show']).as('talent.applies')
-    router.post('/applies', [ApplyController, 'store'])
-    router.put('/applies/:id', [ApplyController, 'update'])
-    router.delete('/applies/:id', [ApplyController, 'delete'])
+    router.post('/apply', [ApplyController, 'store'])
+    router.put('/apply/:id', [ApplyController, 'update'])
+    router.delete('/apply/:id', [ApplyController, 'delete'])
+
+    // Job
+    router.get('/job/:id', [JobsController, 'show']).as('talent.jobs')
+    // router.post('/applies', [ApplyController, 'store'])
+    // router.put('/applies/:id', [ApplyController, 'update'])
+    // router.delete('/applies/:id', [ApplyController, 'delete'])
 
     // Candidatures du talent
     router.get('/profile', [ProfileController, 'show']).as('talent.profile')
     router.post('/profile/:id', [ProfileController, 'update'])
 
-    router.get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile')).as('complete.profile')
+    router
+      .get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile'))
+      .as('complete.profile')
   })
   .prefix('/talent')
   .use([middleware.auth()])
