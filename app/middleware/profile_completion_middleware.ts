@@ -5,7 +5,7 @@ import type { NextFn } from '@adonisjs/core/types/http'
 
 export default class CheckTalentProfileCompletionMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
-    const user = ctx.auth.user!
+    const user = ctx.auth.getUserOrFail()
 
     const userRole = await user.roles().first()
     if (!user || !userRole) return next()
@@ -24,7 +24,7 @@ export default class CheckTalentProfileCompletionMiddleware {
          * Call next method in the pipeline and return its output
          */
         if (completion < 25) {
-          return ctx.response.redirect().toPath('/talent/complete-profile')
+          return ctx.response.redirect('/talent/profile')
         }
       }
     }

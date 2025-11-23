@@ -184,6 +184,8 @@ declare global {
       lastPage: number
     }
     filters: {
+      status: string
+      jobOfferId: string | undefined
       search?: string
       location?: string
       contractType?: string

@@ -13,6 +13,7 @@ interface ApplicationFilters {
   search?: string
   company?: string[]
   status?: string
+  jobOfferId?: number
   page?: number
   limit?: number
 }
@@ -81,6 +82,18 @@ export class ApplicationService {
   }
 
   /**
+   * Récupérer toutes les offres actives de l'entreprise
+   */
+  async getJobOffersByCompany(companyId: number) {
+    return JobOffer.query()
+      .where('company_id', companyId)
+      .whereNull('closed_at')
+      .whereNull('deleted_at')
+      .select('id', 'title')
+      .orderBy('created_at', 'desc')
+  }
+
+  /**
    * Recuperation des candidatures pour une entreprise
    * @param filters Filtre si defini
    * @param companyId ID de l'entreprise
@@ -127,6 +140,10 @@ export class ApplicationService {
 
         query.where('talent_id', user.talentProfile.id)
       }
+    }
+
+    if (filters.jobOfferId) {
+      query.where('job_offer_id', filters.jobOfferId)
     }
 
     const result = await query.paginate(page, limit)

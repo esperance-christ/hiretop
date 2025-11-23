@@ -16,7 +16,7 @@ export default class UserService {
     lastname: string
     email: string
     password: string
-    profile: string | null
+    profile?: string | null
     role?: 'TALENT' | 'COMPANY_ADMIN' | 'RECRUITER' | 'ADMIN'
   }) {
     const user = await User.create({

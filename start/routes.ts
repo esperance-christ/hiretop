@@ -23,6 +23,9 @@ import JobsController from '#controllers/talent/jobs_controller'
 
 import RecruiterBoardController from '#controllers/recruiter/dashboard_controller'
 import PostsController from '#controllers/recruiter/post_controller'
+import ApplicationsController from '#controllers/recruiter/application_controller'
+import FilesController from '#controllers/files_controller'
+import settingsController from '#controllers/recruiter/settings_controller'
 
 router.on('/').renderInertia('home').use(middleware.guest())
 
@@ -62,37 +65,36 @@ router
 router.get('/dashboard', () => {}).use([middleware.auth(), middleware.redirectByRole()])
 
 // Route talent
+router.group(() => {
+  router.get('/dashboard', [DashboardController, 'index']).as('talent.dashboard').use(middleware.profileComplete)
+
+  // Candidatures du talent
+  router.get('/applies', [ApplyController, 'show']).as('talent.applies').use(middleware.profileComplete)
+  router.post('/apply', [ApplyController, 'store'])
+  router.put('/apply/:id', [ApplyController, 'update'])
+  router.delete('/apply/:id', [ApplyController, 'delete'])
+
+  // Job
+  router.get('/job/:id', [JobsController, 'show']).as('talent.jobs')
+
+  // Candidatures du talent
+  router.get('/profile', [ProfileController, 'show']).as('talent.profile')
+  router.post('/profile/:id', [ProfileController, 'update'])
+
+  // router
+  //   .get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile'))
+  //   .as('complete.profile')
+})
+router.get('/applications/:id/cv', [FilesController, 'downloadApplicationCv'])
 router
-  .group(() => {
-    router.get('/dashboard', [DashboardController, 'index']).as('talent.dashboard')
-
-    // Candidatures du talent
-    router.get('/applies', [ApplyController, 'show']).as('talent.applies')
-    router.post('/apply', [ApplyController, 'store'])
-    router.put('/apply/:id', [ApplyController, 'update'])
-    router.delete('/apply/:id', [ApplyController, 'delete'])
-
-    // Job
-    router.get('/job/:id', [JobsController, 'show']).as('talent.jobs')
-    // router.post('/applies', [ApplyController, 'store'])
-    // router.put('/applies/:id', [ApplyController, 'update'])
-    // router.delete('/applies/:id', [ApplyController, 'delete'])
-
-    // Candidatures du talent
-    router.get('/profile', [ProfileController, 'show']).as('talent.profile')
-    router.post('/profile/:id', [ProfileController, 'update'])
-
-    router
-      .get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile'))
-      .as('complete.profile')
-  })
+  .get('/my-cv', [FilesController, 'downloadTalentCv']) //
   .prefix('/talent')
   .use([middleware.auth()])
 
 // Route Recruiter / Entreprise
 router
   .group(() => {
-    router.get('/dashboard', [RecruiterBoardController, 'index']).as('recruiter.dashboard')
+    router.get('/dashboard', [RecruiterBoardController, 'index']).as('recruiter.dashboard').use(middleware.checkCompanyCreate())
 
     // Routes pour les publications offres d'emploi
     router
@@ -105,7 +107,28 @@ router
         router.put('/:id', [PostsController, 'update'])
         router.delete('/:id', [PostsController, 'delete'])
         router.post('/:id/close', [PostsController, 'close']).as('recruiter.posts.close')
-      }).prefix('/posts')
+      })
+      .prefix('/posts').use(middleware.checkCompanyCreate())
+
+    // Route pour gerer les candidatures
+    router
+      .group(() => {
+        router.get('/', [ApplicationsController, 'index']).as('recruiter.applications.index')
+        router.get('/:id', [ApplicationsController, 'show']).as('recruiter.applications.show')
+        router.put('/:id/status', [ApplicationsController, 'updateStatus'])
+        router.get('/:id/cv', [FilesController, 'downloadApplicationCv'])
+        router.get('/talent/:userId/cv', [FilesController, 'downloadTalentCv'])
+      })
+      .prefix('/applies').use(middleware.checkCompanyCreate())
+
+    router
+      .group(() => {
+        router.get('/', [settingsController, 'index']).as('recruiter.configuration')
+        router.post('/general', [settingsController, 'updateCompany'])
+        router.post('/members', [settingsController, 'inviteMember'])
+        router.put('/password', [settingsController, 'updatePassword'])
+      })
+      .prefix('/configuration')
   })
   .prefix('/recruiter')
   .use(middleware.auth())

@@ -239,13 +239,14 @@ export class JobOfferService {
 
     const job = await JobOffer.query().where('id', jobId).preload('company').firstOrFail()
 
-    // Verifier si l'utilisateur connecte est autorisé
     if (user.company.id != job.company.id) {
       throw new Error("Vous n'etes pas autorise a effectuer cette action.")
     }
 
     job.status = 'CLOSED'
     job.isActive = false
+    job.closedAt = DateTime.now()
+
     await job.save()
 
     return job

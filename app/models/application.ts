@@ -15,6 +15,7 @@ export default class Application extends BaseModel {
   @column() declare status: string
 
   @column.dateTime() declare disponibleAt: DateTime | null
+  @column.dateTime() declare closedAt: DateTime
   @column.dateTime({ autoCreate: true }) declare appliedAt: DateTime
   @column.dateTime({ autoCreate: true }) declare createdAt: DateTime
   @column.dateTime({ autoCreate: true, autoUpdate: true }) declare updatedAt: DateTime
