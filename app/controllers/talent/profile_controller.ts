@@ -40,8 +40,6 @@ export default class ProfileController {
       talentExperience = await TalentExperience.query().where('talent_id', talentProfile.id)
 
       completion = await this.talentService.getTalentProfileCompletion(fullUser)
-
-      console.log(completion)
     }
 
     // Charger les skills disponibles pour les selects

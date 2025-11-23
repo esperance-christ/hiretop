@@ -18,8 +18,8 @@ export default class extends BaseSchema {
       table.string('title').notNullable()
       table.text('description')
       table.string('location').nullable()
-      
-      table.string('remote_type', 20).nullable().comment('On-site, Hybrid, Remote')
+
+      table.string('remote_type', 20).nullable().comment('ON-SITE, HYBRID, REMOTE')
       table.enum('contract_type', ['CDI', 'CDD', 'FREELANCE', 'INTERNSHIP']).notNullable()
       table.enum('status', ['DRAFT', 'PUBLISHED', 'EXPIRED', 'CLOSED']).defaultTo('DRAFT')
 

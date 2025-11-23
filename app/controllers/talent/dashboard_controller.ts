@@ -28,7 +28,6 @@ export default class DashboardController {
       talentSkills = await TalentSkill.query().where('talent_id', talentProfile.id)
     }
 
-
     const { data: offers, meta } = await this.jobOfferService.getJobOffers(filters)
 
     return inertia.render('talent/dashboard', {

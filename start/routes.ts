@@ -15,10 +15,14 @@ import RegisterController from '#controllers/auth/talent/register_controller'
 import RecruiterRegisterController from '#controllers/auth/recruiter/register_controller'
 import VerifyEmailController from '#controllers/auth/verify_email_controller'
 import LogoutController from '#controllers/auth/logout_controller'
+
 import DashboardController from '#controllers/talent/dashboard_controller'
 import ApplyController from '#controllers/talent/apply_controller'
 import ProfileController from '#controllers/talent/profile_controller'
 import JobsController from '#controllers/talent/jobs_controller'
+
+import RecruiterBoardController from '#controllers/recruiter/dashboard_controller'
+import PostsController from '#controllers/recruiter/post_controller'
 
 router.on('/').renderInertia('home').use(middleware.guest())
 
@@ -88,7 +92,20 @@ router
 // Route Recruiter / Entreprise
 router
   .group(() => {
-    router.get('/dashboard', async ({ inertia }) => inertia.render('recruiter/dashboard'))
+    router.get('/dashboard', [RecruiterBoardController, 'index']).as('recruiter.dashboard')
+
+    // Routes pour les publications offres d'emploi
+    router
+      .group(() => {
+        router.get('/', [PostsController, 'index']).as('recruiter.posts.index')
+        router.get('/create', [PostsController, 'create']).as('recruiter.posts.create')
+        router.post('/', [PostsController, 'store']).as('recruiter.posts.store')
+
+        router.get('/:id', [PostsController, 'show']).as('recruiter.posts.show')
+        router.put('/:id', [PostsController, 'update'])
+        router.delete('/:id', [PostsController, 'delete'])
+        router.post('/:id/close', [PostsController, 'close']).as('recruiter.posts.close')
+      }).prefix('/posts')
   })
   .prefix('/recruiter')
   .use(middleware.auth())

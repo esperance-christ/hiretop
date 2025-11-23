@@ -154,7 +154,22 @@ declare global {
 
   interface PageProps {
     appName: string
-    flash: { message?: string; error?: string }
+    flash: {
+      auth?: {
+        type?: string | 'success' | 'error'
+        message?: string
+      }
+      job?: {
+        type?: string | 'success' | 'error'
+        message?: string
+      }
+      [key: string]: {
+        type?: string | 'success' | 'error'
+        message?: string
+      }
+      message?: string
+      error?: string
+    }
     auth: {
       user?: User | null
     } | null

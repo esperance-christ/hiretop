@@ -55,8 +55,7 @@ export class JobOfferService {
 
     if (search) {
       query.where((q) => {
-        q.whereILike('title', `%${search}%`)
-         .orWhereILike('description', `%${search}%`)
+        q.whereILike('title', `%${search}%`).orWhereILike('description', `%${search}%`)
       })
     }
 
@@ -88,6 +87,8 @@ export class JobOfferService {
       .preload('company')
       .preload('skills')
       .where('company_id', companyId)
+      .withCount('applications')
+      .orderBy('created_at', 'desc')
       .where('status', 'PUBLISHED')
       .whereNull('deleted_at')
       .where('is_active', true)
