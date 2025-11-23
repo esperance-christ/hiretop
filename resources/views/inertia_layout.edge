@@ -52,15 +52,11 @@
     </script>
 
     @stack('dumper')
-
-    @if(env('NODE_ENV') === 'development')
-      @viteReactRefresh()
-      @vite(['resources/css/app.css', 'inertia/app/app.tsx', `inertia/pages/${page.component}.tsx`])
-    @else
-      @vite(['inertia/app/app.tsx', `inertia/pages/${page.component}.tsx`])
-    @endif
-
+    @viteReactRefresh()
     @inertiaHead()
+
+    {{-- ✅ CONDITION SIMPLIFIÉE : toujours la version prod en Render --}}
+    @vite(['inertia/app/app.tsx', `inertia/pages/${page.component}.tsx`])
   </head>
 
   <body class="min-h-screen w-screen font-poppins">
