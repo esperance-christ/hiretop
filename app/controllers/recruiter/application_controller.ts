@@ -85,6 +85,9 @@ export default class ApplicationsController {
   async updateStatus({ params, request, response, session, auth }: HttpContext) {
     const applicationId = Number(params.id)
     const { status } = request.only(['status'])
+
+    const dt = request.all()
+    console.log(dt)
     const user = auth.getUserOrFail()
 
     if (!['PENDING', 'REVIEWED', 'ACCEPTED', 'REJECTED'].includes(status)) {
@@ -94,7 +97,7 @@ export default class ApplicationsController {
 
     try {
       await this.applicationService.confirmOrRevokeApply(applicationId, { status }, user.id)
-      session.flash('success', `Candidature marquée comme ${status === 'ACCEPTED' ? 'acceptée' : status === 'REJECTED' ? 'rejetée' : 'en cours de traitement'}`)
+      session.flash('success', `Candidature marquée comme ${status === 'ACCEPTED' ? 'acceptée' : status === 'REJECTED' ? 'rejetée' : 'en cours d'}`)
     } catch (error) {
       session.flash('error', error.message || 'Action impossible')
     }
