@@ -1,13 +1,13 @@
+// app/controllers/settings_controller.ts
 import type { HttpContext } from '@adonisjs/core/http'
-import { inject } from '@adonisjs/core'
+import UserService from '#services/user_service'
 import Company from '#models/company'
 import CompanyMember from '#models/company_member'
-
-import UserService from '#services/user_service'
+import { inject } from '@adonisjs/core'
 import { CompanyService } from '#services/company_service'
 
 @inject()
-export default class settingsController {
+export default class SettingsController {
   constructor(
     private companyService: CompanyService,
     private userService: UserService
@@ -20,30 +20,44 @@ export default class settingsController {
       .where('admin_id', user.id)
       .orWhereHas('members', (q) => q.where('user_id', user.id))
       .preload('members', (q) => q.preload('user'))
-      .first()
+      .firstOrFail()
 
     return inertia.render('recruiter/settings', {
-      company: company?.serialize() || null,
-      members: company?.members.map((m) => m.user.serialize()) || [],
+      company: company.serialize(),
+      members: company.members.map(m => m.user.serialize()),
     })
   }
 
   async updateCompany({ request, auth, session, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const data = request.only(['name', 'country', 'address', 'description', 'logo'])
-    const company = await Company.query().where('admin_id', user.id).firstOrFail()
+    const data = request.all() // Prend tout (y compris le fichier)
+
+    const company = await Company.query()
+      .where('admin_id', user.id)
+      .orWhereHas('members', (q) => q.where('user_id', user.id))
+      .firstOrFail()
 
     await this.companyService.updateCompany(user.id, company.id, data)
-    session.flash('success', 'Informations mises à jour')
+    session.flash('success', 'Entreprise mise à jour avec succès')
     return response.redirect().back()
   }
 
-  async inviteMember({ request, auth, response }: HttpContext) {
+  async inviteMember({ request, auth, session, response }: HttpContext) {
     const user = auth.getUserOrFail()
     const { firstname, lastname, email } = request.only(['firstname', 'lastname', 'email'])
-    const company = await Company.query().where('admin_id', user.id).firstOrFail()
 
-    const tempPassword = Math.random().toString(36).slice(-10)
+    if (!firstname || !lastname || !email) {
+      session.flash('error', 'Tous les champs sont obligatoires')
+      return response.redirect().back()
+    }
+
+    const company = await Company.query()
+      .where('admin_id', user.id)
+      .orWhereHas('members', (q) => q.where('user_id', user.id))
+      .firstOrFail()
+
+    const tempPassword = 'password1234567890'
+
     const newUser = await this.userService.createUser({
       firstname,
       lastname,
@@ -52,8 +66,13 @@ export default class settingsController {
       role: 'RECRUITER',
     })
 
-    await CompanyMember.create({ userId: newUser.id, companyId: company.id })
+    await CompanyMember.create({
+      userId: newUser.id,
+      companyId: company.id,
+    })
 
+    // TODO: Envoyer email avec mot de passe temporaire
+    session.flash('success', `Membre invité ! Mot de passe temporaire : ${tempPassword}`)
     return response.redirect().back()
   }
 
@@ -66,8 +85,14 @@ export default class settingsController {
       return response.redirect().back()
     }
 
+    if (password.length < 8) {
+      session.flash('error', 'Le mot de passe doit faire au moins 8 caractères')
+      return response.redirect().back()
+    }
+
     user.password = password
     await user.save()
+
     session.flash('success', 'Mot de passe mis à jour')
     return response.redirect().back()
   }

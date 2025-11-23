@@ -65,36 +65,45 @@ router
 router.get('/dashboard', () => {}).use([middleware.auth(), middleware.redirectByRole()])
 
 // Route talent
-router.group(() => {
-  router.get('/dashboard', [DashboardController, 'index']).as('talent.dashboard').use(middleware.profileComplete)
-
-  // Candidatures du talent
-  router.get('/applies', [ApplyController, 'show']).as('talent.applies').use(middleware.profileComplete)
-  router.post('/apply', [ApplyController, 'store'])
-  router.put('/apply/:id', [ApplyController, 'update'])
-  router.delete('/apply/:id', [ApplyController, 'delete'])
-
-  // Job
-  router.get('/job/:id', [JobsController, 'show']).as('talent.jobs')
-
-  // Candidatures du talent
-  router.get('/profile', [ProfileController, 'show']).as('talent.profile')
-  router.post('/profile/:id', [ProfileController, 'update'])
-
-  // router
-  //   .get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile'))
-  //   .as('complete.profile')
-})
-router.get('/applications/:id/cv', [FilesController, 'downloadApplicationCv'])
 router
-  .get('/my-cv', [FilesController, 'downloadTalentCv']) //
+  .group(() => {
+    router
+      .get('/dashboard', [DashboardController, 'index'])
+      .as('talent.dashboard')
+      .use(middleware.profileComplete)
+
+    // Candidatures du talent
+    router
+      .get('/applies', [ApplyController, 'show'])
+      .as('talent.applies')
+      .use(middleware.profileComplete)
+    router.post('/apply', [ApplyController, 'store'])
+    router.put('/apply/:id', [ApplyController, 'update'])
+    router.delete('/apply/:id', [ApplyController, 'delete'])
+
+    // Job
+    router.get('/job/:id', [JobsController, 'show']).as('talent.jobs')
+
+    // Candidatures du talent
+    router.get('/profile', [ProfileController, 'show']).as('talent.profile')
+    router.post('/profile/:id', [ProfileController, 'update'])
+
+    // router
+    //   .get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile'))
+    //   .as('complete.profile')
+    router.get('/applications/:id/cv', [FilesController, 'downloadApplicationCv'])
+    router.get('/my-cv', [FilesController, 'downloadTalentCv'])
+  })
   .prefix('/talent')
   .use([middleware.auth()])
 
 // Route Recruiter / Entreprise
 router
   .group(() => {
-    router.get('/dashboard', [RecruiterBoardController, 'index']).as('recruiter.dashboard').use(middleware.checkCompanyCreate())
+    router
+      .get('/dashboard', [RecruiterBoardController, 'index'])
+      .as('recruiter.dashboard')
+      .use(middleware.checkCompanyCreate())
 
     // Routes pour les publications offres d'emploi
     router
@@ -108,7 +117,8 @@ router
         router.delete('/:id', [PostsController, 'delete'])
         router.post('/:id/close', [PostsController, 'close']).as('recruiter.posts.close')
       })
-      .prefix('/posts').use(middleware.checkCompanyCreate())
+      .prefix('/posts')
+      .use(middleware.checkCompanyCreate())
 
     // Route pour gerer les candidatures
     router
@@ -119,7 +129,8 @@ router
         router.get('/:id/cv', [FilesController, 'downloadApplicationCv'])
         router.get('/talent/:userId/cv', [FilesController, 'downloadTalentCv'])
       })
-      .prefix('/applies').use(middleware.checkCompanyCreate())
+      .prefix('/applies')
+      .use(middleware.checkCompanyCreate())
 
     router
       .group(() => {

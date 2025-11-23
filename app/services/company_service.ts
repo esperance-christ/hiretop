@@ -2,6 +2,7 @@ import Company from '#models/company'
 import CompanyMember from '#models/company_member'
 import User from '#models/user'
 import { cuid } from '@adonisjs/core/helpers'
+import drive from '@adonisjs/drive/services/main'
 import { Acl } from '@holoyan/adonisjs-permissions'
 
 interface createCompany {

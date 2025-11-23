@@ -1,229 +1,166 @@
-import React, { useState } from 'react'
-import { Head, useForm, usePage, router } from '@inertiajs/react'
+// resources/js/pages/recruiter/configuration/company.tsx
+
+import React, { useEffect, useState } from 'react'
+import { Head, useForm } from '@inertiajs/react'
 import RecruiterLayout from '~/layouts/recruiter_layout'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Textarea } from '~/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
-import { Badge } from '~/components/ui/badge'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
-import { Building2, Users, Lock, CheckCircle } from 'lucide-react'
+import { Building2, CheckCircle } from 'lucide-react'
 
-export default function Settings() {
-  const { company, members } = usePage<PageProps>().props
+interface Company {
+  id: number
+  name: string
+  country: string | null
+  address: string | null
+  description: string | null
+  logoUrl?: string
+}
 
-  const [activeTab, setActiveTab] = useState('company')
+interface Props {
+  company: Company
+}
 
-  const companyForm = useForm({
-    name: company?.name || '',
-    country: company?.country || '',
-    address: company?.address || '',
-    description: company?.description || '',
+export default function CompanySettings({ company }: Props) {
+  // useForm avec les vraies données → Inertia sait quoi envoyer
+  const { data, setData, post, processing, errors } = useForm({
+    name: company.name,
+    country: company.country || '',
+    address: company.address || '',
+    description: company.description || '',
     logo: null as File | null,
   })
 
-  const memberForm = useForm({
-    firstname: '',
-    lastname: '',
-    email: '',
-  })
+  const [logoPreview, setLogoPreview] = useState(company.logoUrl || '')
 
-  const passwordForm = useForm({
-    password: '',
-    password_confirmation: '',
-  })
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
 
-  const steps = [
-    { id: 'company', label: 'Entreprise', icon: Building2, completed: !!company },
-    { id: 'members', label: 'Équipe', icon: Users, completed: members.length > 1 },
-    { id: 'password', label: 'Sécurité', icon: Lock, completed: true },
-  ]
+    const formData = new FormData()
+    formData.append('name', data.name)
+    formData.append('country', data.country)
+    formData.append('address', data.address)
+    formData.append('description', data.description)
+    if (data.logo) {
+      formData.append('logo', data.logo)
+    }
+
+    post('/recruiter/configuration/general', {
+      forceFormData: true,
+      onSuccess: () => {
+        setData((prev) => ({ ...prev, logo: null }))
+        setLogoPreview(URL.createObjectURL(data.logo!) || company.logoUrl!)
+      },
+    })
+  }
 
   return (
     <RecruiterLayout>
-      <Head title="Configuration de votre espace" />
+      <Head title="Paramètres - Entreprise" />
 
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-white drop-shadow-lg">Configuration</h1>
-          <p className="text-white/80 mt-2">Finalisez votre espace recruteur en quelques étapes</p>
+      <div className="max-w-4xl mx-auto py-10">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-white drop-shadow-lg">
+            Configuration de l'entreprise
+          </h1>
+          <p className="text-white/80 mt-2">Mettez à jour les informations de votre entreprise</p>
         </div>
 
-        <div className="flex justify-center items-center gap-8 flex-wrap">
-          {steps.map((step, i) => (
-            <div key={step.id} className="flex items-center gap-4">
-              <div
-                className={`flex items-center justify-center w-12 h-12 rounded-full border-4 ${step.completed ? 'bg-green-500 border-green-500' : 'border-white/30'}`}
-              >
-                {step.completed ? (
-                  <CheckCircle className="w-6 h-6 text-white" />
-                ) : (
-                  <step.icon className="w-6 h-6 text-white/70" />
-                )}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <Building2 className="w-6 h-6" />
+              Informations générales
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Nom */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Nom de l'entreprise</label>
+                <Input
+                  value={data.name}
+                  onChange={(e) => setData('name', e.target.value)}
+                  required
+                  error={errors.name}
+                />
               </div>
-              <span className="text-white font-medium hidden sm:block">{step.label}</span>
-              {i < steps.length - 1 && <div className="w-24 h-1 bg-white/30" />}
-            </div>
-          ))}
-        </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-10">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="company">Informations entreprise</TabsTrigger>
-            <TabsTrigger value="members">Membres de l'équipe</TabsTrigger>
-            <TabsTrigger value="password">Mot de passe</TabsTrigger>
-          </TabsList>
-
-          {/* ÉTAPE 1 : Entreprise */}
-          <TabsContent value="company">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations de l'entreprise</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    companyForm.post('/recruiter/configuration/company')
-                  }}
-                >
-                  <div className="grid gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Nom de l'entreprise</label>
-                      <Input {...companyForm} name="name" required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Localisation (Pays)</label>
-                      <Input {...companyForm} name="country" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Adresse</label>
-                      <Input {...companyForm} name="address" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Description</label>
-                      <Textarea {...companyForm} name="description" rows={4} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Logo</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => companyForm.setData('logo', e.target.files?.[0] || null)}
-                      />
-                    </div>
-                    <Button type="submit" className="w-full mt-6">
-                      Mettre à jour
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ÉTAPE 2 : Membres */}
-          <TabsContent value="members">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ajouter un collaborateur</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    memberForm.post('/recruiter/configuration/members', {
-                      onSuccess: () => memberForm.reset(),
-                    })
-                  }}
-                >
-                  <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Prénom</label>
-                      <Input {...memberForm} name="firstname" required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Nom</label>
-                      <Input {...memberForm} name="lastname" required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Email</label>
-                      <Input type="email" {...memberForm} name="email" required />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full">
-                    Inviter ce collaborateur
-                  </Button>
-                </form>
-
-                <div className="mt-8">
-                  <h3 className="font-semibold mb-4">Membres actuels ({members.length})</h3>
-                  <div className="space-y-3">
-                    {members.map((m: any) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarFallback>
-                              {m.firstname[0]}
-                              {m.lastname[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">
-                              {m.firstname} {m.lastname}
-                            </p>
-                            <p className="text-sm text-gray-500">{m.email}</p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">Recruteur</Badge>
-                      </div>
-                    ))}
-                  </div>
+              {/* Pays + Adresse */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Pays</label>
+                  <Input
+                    value={data.country}
+                    onChange={(e) => setData('country', e.target.value)}
+                    placeholder="France"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Adresse</label>
+                  <Input
+                    value={data.address}
+                    onChange={(e) => setData('address', e.target.value)}
+                    placeholder="123 Rue de Paris"
+                  />
+                </div>
+              </div>
 
-          {/* ÉTAPE 3 : Mot de passe */}
-          <TabsContent value="password">
-            <Card>
-              <CardHeader>
-                <CardTitle>Changer votre mot de passe</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    passwordForm.put('/recruiter/configuration/password')
-                  }}
-                >
-                  <div className="space-y-4 max-w-md">
-                    <Input
-                      type="password"
-                      placeholder="Nouveau mot de passe"
-                      {...passwordForm}
-                      name="password"
-                      required
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <Textarea
+                  value={data.description}
+                  onChange={(e) => setData('description', e.target.value)}
+                  rows={5}
+                  placeholder="Parlez de votre entreprise..."
+                />
+              </div>
+
+              {/* Logo */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Logo de l'entreprise</label>
+                {logoPreview && (
+                  <div className="mb-4">
+                    <img
+                      src={logoPreview}
+                      alt="Logo actuel"
+                      className="h-24 w-24 object-contain rounded-lg border bg-white p-2"
                     />
-                    <Input
-                      type="password"
-                      placeholder="Confirmer le mot de passe"
-                      {...passwordForm}
-                      name="password_confirmation"
-                      required
-                    />
-                    <Button type="submit" className="w-full">
-                      Mettre à jour le mot de passe
-                    </Button>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      setData('logo', file)
+                      setLogoPreview(URL.createObjectURL(file))
+                    }
+                  }}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full border border-green-700 bg-green-600 text-white hover:bg-transparent hover:text-green-700"
+                disabled={processing}
+              >
+                {processing ? (
+                  <>Enregistrement en cours...</>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Mettre à jour l'entreprise
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </RecruiterLayout>
   )

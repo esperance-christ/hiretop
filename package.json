@@ -6,7 +6,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "start": "node bin/server.js",
-    "build": "node ace build --ignore-ts-errors",
+    "build": "node ace build --production --ignore-ts-errors",
+    "postinstall": "npm run build",
     "dev": "node ace serve --hmr",
     "seed": "node ace db:seed",
     "test": "node ace test",

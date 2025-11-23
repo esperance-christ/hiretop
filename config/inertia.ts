@@ -47,7 +47,7 @@ const inertiaConfig = defineConfig({
                 href: '/recruiter/applies',
                 route: 'recruiter.applies',
               },
-              { label: 'Paramètres', href: '/recruiter/settings', route: 'recruiter.settings' },
+              { label: 'Paramètres', href: '/recruiter/configuration', route: 'recruiter.settings' },
             ])
           } else if (await ctx.auth.use('web').user!.hasRole('TALENT')) {
             return (menuItems = [
