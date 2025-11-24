@@ -113,12 +113,6 @@
         <p>Nos talents sont vérifiés et prêts à rejoindre votre équipe !</p>
       @endif
 
-      <div style="text-align: center;">
-        <a href="{{ env.get('APP_URL') }}/dashboard" class="btn">
-          {{ role === 'talent' ? 'Compléter mon profil' : 'Publier ma première offre' }}
-        </a>
-      </div>
-
       <p>À très vite sur HireTop !</p>
       <p>— L’équipe HireTop</p>
     </div>
@@ -127,7 +121,7 @@
     <div class="footer">
       <p>
         Vous recevez cet email car vous venez de créer un compte sur
-        <a href="{{ env.get('APP_URL') }}">hiretop.com</a>
+        <a href="#">hiretop.com</a>
       </p>
       <p>
         HireTop © {{ new Date().getFullYear() }} • Tous droits réservés<br>

@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react'
 import { Link, usePage } from '@inertiajs/react'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import {
   Sidebar,
   SidebarContent,
@@ -14,8 +14,16 @@ import {
   SidebarFooter,
   SidebarTrigger,
 } from '~/components/ui/sidebar'
-import { Bell, LogOut } from 'lucide-react'
+import { Bell, LogOut, User } from 'lucide-react'
 import Logo from '~/components/logo'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
 
 interface menuItem {
   label: string
@@ -63,18 +71,51 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-4 border border-amber-300 bg-amber-50 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="text-sm font-semibold">
-                  {user?.firstname?.[0]}
-                  {user?.lastname?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <p className="text-sm font-medium">
-                {user?.firstname} {user?.lastname}
-              </p>
-            </div>
+          <SidebarFooter className="p-4 border-t bg-green-600 rounded-xl border-gray-100">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full rounded-lg hover:bg-emerald-700/60 transition-colors focus:outline-none">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-9 w-9 ring-2 ring-white/30">
+                    <AvatarImage src={user?.profile} />
+                    <AvatarFallback className="bg-white text-emerald-700 font-bold text-sm">
+                      {user?.firstname?.[0]}
+                      {user?.lastname?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-white leading-none">
+                      {user?.firstname} {user?.lastname}
+                    </p>
+                    <p className="text-xs text-emerald-100 mt-0.5">{user?.email}</p>
+                  </div>
+                </div>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-56 mt-2">
+                <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/recruiter/configuration"
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Profil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="text-red-600 focus:text-red-600">
+                  <Link
+                    href="/auth/logout"
+                    method="post"
+                    as="button"
+                    className="w-full flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Déconnexion</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarFooter>
         </Sidebar>
 

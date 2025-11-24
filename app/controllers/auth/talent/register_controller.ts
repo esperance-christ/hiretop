@@ -53,7 +53,7 @@ export default class RegisterController {
     // await auth.use('web').login(user)
     session.flash('auth', { type: 'success', message: 'inscription réussie ! Bienvenue.' })
 
-    return response.redirect('auth/login')
+    return response.redirect('/auth/login')
   }
 
   // private generateVerificationUrl(userId: number): string {

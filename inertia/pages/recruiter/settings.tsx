@@ -83,7 +83,7 @@ export default function CompanySettings({ company }: Props) {
                   value={data.name}
                   onChange={(e) => setData('name', e.target.value)}
                   required
-                  error={errors.name}
+                  // error={errors.name}
                 />
               </div>
 

@@ -18,7 +18,6 @@ import { Building2, Users, Briefcase, FileText, TrendingUp } from 'lucide-react'
 export default function Dashboard() {
   const { companyName, stats, latestPosts, latestApplications } = usePage<any>().props
 
-  console.log(latestApplications[0].talent)
   const totalApplications = Number(stats.totalApplications)
   const totalPosts = Number(stats.totalPosts)
   const acceptedApplications = Number(stats.acceptedApplications)
