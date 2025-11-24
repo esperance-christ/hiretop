@@ -89,3 +89,25 @@ Le frontend sera servi via InertiaJS, le backend est disponible sur le port conf
 * **React + InertiaJS** : Permet une expérience utilisateur type SPA tout en gardant la logique côté serveur et les avantages SEO.
 * **TailwindCSS & SHADCN UI** : Rapidité de prototypage et interface moderne, accessible et responsive.
 * **TypeScript** : Typage fort pour sécuriser et documenter le code côté frontend et backend.
+
+## Fonctionnalités actuellement implémentées
+
+* Création et validation d’un compte.
+* Création d’offres par les recruteurs.
+* Accès aux offres selon le rôle et les compétences des utilisateurs.
+* Acceptation ou rejet d’une offre.
+* Modification du profil pour les talents et les entreprises.
+
+## Accès par défaut pour tests
+
+### Pour tester rapidement le processus, deux comptes sont créés par défaut :
+
+**Email	Rôle	Mot de passe**
+* alice@digitalcompany.com
+	* **Role: COMPANY_ADMIN** 
+  * **Mot de passe :** password123
+* charlie@talent.com
+  * **Role: TALENT** 
+  * **Mot de passe :** password123
+
+Ces comptes permettent de se connecter en tant que talent ou COMPANY_ADMIN.

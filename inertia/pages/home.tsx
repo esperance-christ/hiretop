@@ -4,7 +4,6 @@ import Footer from '~/components/footer'
 import Logo from '~/components/logo'
 
 export default function Home({ jobs = [] }) {
-
   const sampleJobs = () => [
     {
       id: 1,
@@ -46,32 +45,7 @@ export default function Home({ jobs = [] }) {
       tags: ['AWS', 'Docker', 'Kubernetes'],
       salary: 1600,
     },
-    {
-      id: 6,
-      title: 'Community Manager',
-      company: 'Konga',
-      summary: 'Développez et engagez la communauté en ligne autour de nos produits.',
-      tags: ['Social Media', 'Content Creation', 'Marketing'],
-      salary: 1000,
-    },
-    {
-      id: 7,
-      title: 'Product Manager',
-      company: 'Interswitch',
-      summary: 'Supervisez le développement des produits fintech innovants.',
-      tags: ['Agile', 'Roadmap', 'Stakeholders'],
-      salary: 1700,
-    },
-    {
-      id: 8,
-      title: 'Mobile Developer',
-      company: 'Paystack',
-      summary: 'Créez des applications mobiles sécurisées pour les paiements.',
-      tags: ['Flutter', 'React Native', 'API Integration'],
-      salary: 1500,
-    },
   ]
-
 
   return (
     <div className="min-h-screen bg-white text-gray-800 antialiased">
@@ -145,17 +119,12 @@ export default function Home({ jobs = [] }) {
 
           <div className="flex justify-center md:justify-end">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-101 transition">
-              {/* Illustration placeholder */}
               <div className="h-72 bg-linear-to-br from-indigo-400 to-purple-400 flex items-center justify-center">
-                <svg
-                  width="180"
-                  height="180"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect width="24" height="24" rx="4" fill="white" opacity="0.2" />
-                </svg>
+                <img
+                  src="https://images.unsplash.com/photo-1723221907187-3e88c1d74b99?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                  alt="Freelancer"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="p-6">
                 <h3 className="font-semibold text-lg">Trouvez le talent idéal en quelques clics</h3>
@@ -250,7 +219,7 @@ export default function Home({ jobs = [] }) {
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-lg font-bold">${job.salary || 750}</div>
                 <a
-                  href={`/jobs/${job.id || idx}`}
+                  href={`/auth/login`}
                   className="text-sm px-3 py-2 rounded-full bg-green-50 text-green-700"
                 >
                   Apply Now
@@ -325,5 +294,3 @@ export default function Home({ jobs = [] }) {
     </div>
   )
 }
-
-

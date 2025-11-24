@@ -95,6 +95,7 @@ export default class UserAndCompanySeeder extends BaseSeeder {
           email: data.email,
           password: await Hash.make('password123'),
           profile: '',
+          emailVerifiedAt: DateTime.now()
         }
       )
       const currentUser = await User.query().where('id', user.id).firstOrFail()
