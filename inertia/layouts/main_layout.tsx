@@ -36,12 +36,12 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
                 <Link href="/jobs" className="text-green-600 border-b-2 border-green-600 pb-1">
                   Trouver un job
                 </Link>
-                <Link href="/about" className="hover:text-gray-900">
+                {/* <Link href="/abou" className="hover:text-gray-900">
                   Contact
                 </Link>
                 <Link href="/about" className="hover:text-gray-900">
                   À propos
-                </Link>
+                </Link> */}
               </nav>
             </div>
 

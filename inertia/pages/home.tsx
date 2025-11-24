@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react'
+import { Head, usePage } from '@inertiajs/react'
 import React from 'react'
 import Footer from '~/components/footer'
 import Logo from '~/components/logo'
@@ -50,6 +50,7 @@ export default function Home({ jobs = [] }) {
   return (
     <div className="min-h-screen bg-white text-gray-800 antialiased">
       {/* Header */}
+      <Head title="Hiretop - Connect Talent & Companies" />
       <header className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <a href="/">
@@ -123,7 +124,7 @@ export default function Home({ jobs = [] }) {
                 <img
                   src="https://images.unsplash.com/photo-1723221907187-3e88c1d74b99?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                   alt="Freelancer"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
               </div>
               <div className="p-6">
