@@ -37,14 +37,7 @@ export default function Home({ jobs = [] }) {
       tags: ['SQL', 'Python', 'PowerBI'],
       salary: 1300,
     },
-    {
-      id: 5,
-      title: 'Ingénieur DevOps',
-      company: 'Safaricom',
-      summary: 'Automatisez les déploiements et assurez la stabilité des systèmes.',
-      tags: ['AWS', 'Docker', 'Kubernetes'],
-      salary: 1600,
-    },
+
   ]
 
   return (
@@ -179,7 +172,7 @@ export default function Home({ jobs = [] }) {
         </div>
       </section>
 
-      {/* 05 dernieres opportunites */}
+      {/* 04 dernieres opportunites */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <h2 className="text-2xl font-bold text-center">Dernières opportunités</h2>
         <p className="text-center text-gray-600 mt-2">
