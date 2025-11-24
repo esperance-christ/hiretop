@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react'
-import { usePage, router, useForm } from '@inertiajs/react'
+import { usePage, router, useForm, Head } from '@inertiajs/react'
 import MainLayout from '~/layouts/main_layout'
 import { Card, CardContent, CardTitle } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
@@ -186,8 +186,6 @@ const TalentProfile = () => {
     })) || []
   )
 
-  console.log(experiences)
-
   const [educations, setEducations] = useState(
     talentEducation?.map((e: any) => ({
       id: e.id,
@@ -337,38 +335,7 @@ const TalentProfile = () => {
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto py-10 space-y-8">
-        {/* GENERAL FORM */}
-        <Dialog>
-          <form>
-            <DialogTrigger asChild>
-              <Button variant="outline">Open Dialog</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Edit profile</DialogTitle>
-                <DialogDescription>
-                  Make changes to your profile here. Click save when you&apos;re done.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <div className="grid gap-3">
-                  <Label htmlFor="name-1">Name</Label>
-                  <Input id="name-1" name="name" defaultValue="Pedro Duarte" />
-                </div>
-                <div className="grid gap-3">
-                  <Label htmlFor="username-1">Username</Label>
-                  <Input id="username-1" name="username" defaultValue="@peduarte" />
-                </div>
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Save changes</Button>
-              </DialogFooter>
-            </DialogContent>
-          </form>
-        </Dialog>
+        <Head title="Mon Profile" />
         <form onSubmit={submitGeneral} className="space-y-6" encType="multipart/form-data">
           <Card className="p-6 flex items-center space-x-4">
             <div className="relative w-24 h-24">
@@ -525,29 +492,19 @@ const TalentProfile = () => {
               <div>
                 <Label>CV (PDF)</Label>
                 <Input className="mt-4" ref={cvRef} name="cv" type="file" accept=".pdf" />
-                {talentProfile?.cvUrl && (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="link" className="mt-1">
-                        Voir le CV
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl max-w-full">
-                      <DialogHeader>
-                        <DialogTitle>CV de {user.firstname}</DialogTitle>
-                      </DialogHeader>
-                      <iframe
-                        src={talentProfile.cvUrl}
-                        className="w-full h-[600px] border rounded"
-                        title="CV PDF"
-                      />
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button variant="outline">Fermer</Button>
-                        </DialogClose>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                {talentProfile?.cvUrl ? (
+                  <Button asChild variant="link" className="mt-1 h-auto p-0">
+                    <a
+                      href="/talent/my-cv"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      Voir le CV
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground text-sm">Aucun CV uploadé</span>
                 )}
               </div>
 

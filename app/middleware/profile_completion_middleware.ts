@@ -1,32 +1,30 @@
-import TalentProfile from '#models/talent_profile'
-import { TalentService } from '#services/talent_service'
+// app/middlewares/check_talent_profile_completion_middleware.ts
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
+import { TalentService } from '#services/talent_service'
 
 export default class CheckTalentProfileCompletionMiddleware {
-  async handle(ctx: HttpContext, next: NextFn) {
-    const user = ctx.auth.getUserOrFail()
+  async handle({ auth, response, request }: HttpContext, next: NextFn) {
+    const user = auth.user!
 
-    const userRole = await user.roles().first()
-    if (!user || !userRole) return next()
-
-
-    const talentService = new TalentService()
-
-    // Verifier si l'utilisateur est un TEALENT
     const isTalent = await user.hasRole('TALENT')
     if (!isTalent) return next()
 
-    if(user && isTalent) {
-      if(user.talentProfile && user.talentProfile.id) {
-        const completion = await talentService.getTalentProfileCompletion(user)
-        /**
-         * Call next method in the pipeline and return its output
-         */
-        if (completion < 25) {
-          return ctx.response.redirect('/talent/profile')
-        }
-      }
+    if (!user.talentProfile?.id) {
+      return response.redirect('/talent/profile', true)
     }
+
+    // 3. On calcule le vrai taux de complétion via ton service
+    const talentService = new TalentService()
+    const completion = await talentService.getTalentProfileCompletion(user)
+
+    console.log('Profile completion:', completion)
+
+    if (completion <= 25) {
+      return response.redirect('/talent/profile', true)
+    }
+
+    return next()
   }
+
 }

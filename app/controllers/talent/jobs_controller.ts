@@ -2,6 +2,7 @@ import Application from '#models/application'
 import User from '#models/user'
 import { JobOfferService } from '#services/job_offer_service'
 import { inject } from '@adonisjs/core'
+import { Exception } from '@adonisjs/core/exceptions'
 import type { HttpContext } from '@adonisjs/core/http'
 
 @inject()
@@ -20,7 +21,7 @@ export default class JobsController {
     const job = await this.jobService.getJobOffer(jobId)
 
     if (!job) {
-      return inertia.render('errors/NotFound', { message: 'Offre introuvable' })
+      throw new Exception('Offre non trouvee', { status: 404 })
     }
 
     let alreadyApplied = false

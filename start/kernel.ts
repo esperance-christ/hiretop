@@ -49,10 +49,10 @@ router.use([
  */
 export const middleware = router.named({
   redirectByRole: () => import('#middleware/redirect_by_role_middleware'),
+  role: () => import('#middleware/role_middleware'),
   // verifyEmail: () => import('#middleware/verify_email_middleware'),
   guest: () => import('#middleware/guest_middleware'),
   auth: () => import('#middleware/auth_middleware'),
   profileComplete: () => import('#middleware/profile_completion_middleware'),
- checkCompanyCreate:  () => import('#middleware/check_company_create_middleware')
-
+  checkCompanyCreate: () => import('#middleware/check_company_create_middleware'),
 })

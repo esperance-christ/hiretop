@@ -70,7 +70,7 @@ router
     router
       .get('/dashboard', [DashboardController, 'index'])
       .as('talent.dashboard')
-      .use(middleware.profileComplete)
+      .use(middleware.profileComplete())
 
     // Candidatures du talent
     router
@@ -95,7 +95,7 @@ router
     router.get('/my-cv', [FilesController, 'downloadTalentCv'])
   })
   .prefix('/talent')
-  .use([middleware.auth()])
+  .use([middleware.auth(), middleware.role('TALENT')])
 
 // Route Recruiter / Entreprise
 router
@@ -142,4 +142,4 @@ router
       .prefix('/configuration')
   })
   .prefix('/recruiter')
-  .use(middleware.auth())
+  .use([middleware.auth(), middleware.role('COMPANY_ADMIN, RECRUITER')])

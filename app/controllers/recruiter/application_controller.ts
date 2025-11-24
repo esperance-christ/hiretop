@@ -3,6 +3,7 @@ import { ApplicationService } from '#services/application_service'
 import { inject } from '@adonisjs/core'
 import CompanyMember from '#models/company_member'
 import Application from '#models/application'
+import { Exception } from '@adonisjs/core/exceptions'
 
 @inject()
 export default class ApplicationsController {
@@ -66,7 +67,7 @@ export default class ApplicationsController {
     const application = await this.applicationService.getApplication(applicationId)
 
     if (application.companyId !== companyId) {
-      return inertia.render('errors/403')
+      throw new Exception('Vous ne pouvez pas acceder a ce contenue', { status: 403 })
     }
 
     return inertia.render('recruiter/applications/show', {

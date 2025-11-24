@@ -28,8 +28,7 @@ const inertiaConfig = defineConfig({
           role,
           permissions,
         }
-
-      }),
+      }) ?? null,
     menuItems: (ctx) =>
       ctx.inertia.always(async () => {
         let menuItems: Array<{ label: string; href: string; route: string }> = []
@@ -47,9 +46,15 @@ const inertiaConfig = defineConfig({
                 href: '/recruiter/applies',
                 route: 'recruiter.applies',
               },
-              { label: 'Paramètres', href: '/recruiter/configuration', route: 'recruiter.settings' },
+              {
+                label: 'Paramètres',
+                href: '/recruiter/configuration',
+                route: 'recruiter.settings',
+              },
             ])
-          } else if (await ctx.auth.use('web').user!.hasRole('TALENT')) {
+          }
+
+          if (await ctx.auth.use('web').user!.hasRole('TALENT')) {
             return (menuItems = [
               { label: 'Accueil', href: '/dashboard', route: 'dashboard' },
               {
@@ -66,12 +71,12 @@ const inertiaConfig = defineConfig({
           }
         }
       }),
-    currentUrl: (ctx) => `${ctx.request.url()}`,
+    currentUrl: (ctx) => ctx?.request?.url() ?? '/',
     flash: (ctx) => {
       return {
-        auth: ctx.session.flashMessages.get('auth'),
-        success: ctx.session.flashMessages.get('success'),
-        error: ctx.session.flashMessages.get('error'),
+        auth: ctx?.session?.flashMessages?.get('auth') ?? null,
+        success: ctx?.session?.flashMessages?.get('success') ?? null,
+        error: ctx?.session?.flashMessages?.get('error') ?? null,
       }
     },
     appName: () => env.get('APP_NAME') || 'HireTop',

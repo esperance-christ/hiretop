@@ -7,6 +7,7 @@ import { createJobValidator } from '#validators/create_job'
 import { updateJobValidator } from '#validators/update_job'
 import Skill from '#models/skill'
 import CompanyMember from '#models/company_member' // ← Ajouté
+import { Exception } from '@adonisjs/core/exceptions'
 
 @inject()
 export default class PostsController {
@@ -55,7 +56,7 @@ export default class PostsController {
     const companyId = await this.getUserCompanyId(user.id)
 
     if (companyId !== job.companyId) {
-      return inertia.render('errors/403')
+      throw new Exception('Vous ne pouvez pas acceder a ce contenue', { status: 403 })
     }
 
     const skills = await Skill.all()
@@ -109,7 +110,7 @@ export default class PostsController {
       const companyId = await this.getUserCompanyId(user.id)
 
       if (companyId !== job.companyId) {
-        return inertia.render('errors/403')
+        throw new Exception('Vous ne pouvez pas acceder a ce contenue', { status: 403 })
       }
 
       await this.jobOfferService.updateJobOffer(
@@ -141,7 +142,7 @@ export default class PostsController {
       const companyId = await this.getUserCompanyId(user.id)
 
       if (companyId !== job.companyId) {
-        return inertia.render('errors/403')
+        throw new Exception('Vous ne pouvez pas acceder a ce contenue', { status: 403 })
       }
 
       await this.jobOfferService.deleteJobOffer(user.id, jobId)
@@ -166,7 +167,7 @@ export default class PostsController {
       const companyId = await this.getUserCompanyId(user.id)
 
       if (companyId !== job.companyId) {
-        return inertia.render('errors/403')
+        throw new Exception('Vous ne pouvez pas acceder a ce contenue', { status: 403 })
       }
 
       await this.jobOfferService.closeJobOffer(user.id, jobId)
