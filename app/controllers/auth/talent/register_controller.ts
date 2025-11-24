@@ -39,26 +39,26 @@ export default class RegisterController {
       profile: null,
     })
 
-    const verificationUrl = this.generateVerificationUrl(user.id)
+    // const verificationUrl = this.generateVerificationUrl(user.id)
 
     // Envoyer email de vérification
     await Mail.send((message) => {
       message
         .to(user.email)
         .from('info@hiretop.com', 'HireTop')
-        .subject('Vérifiez votre compte HireTop')
-        .htmlView('emails/verify_email', { user, verificationUrl })
+        .subject('Bienvenue sur HireTop')
+        .htmlView('emails/verify_email', { user, role: 'TALENT' })
     })
 
-    await auth.use('web').login(user)
+    // await auth.use('web').login(user)
     session.flash('auth', { type: 'success', message: 'inscription réussie ! Bienvenue.' })
 
-    return response.redirect().toRoute('auth.register.success')
+    return response.redirect('auth/login')
   }
 
-  private generateVerificationUrl(userId: number): string {
-    const hash = Buffer.from(`${userId}|${DateTime.now().toMillis()}`).toString('base64url')
-    const baseUrl = env.get('APP_URL')
-    return `${baseUrl}/auth/verify/${userId}/${hash}`
-  }
+  // private generateVerificationUrl(userId: number): string {
+  //   const hash = Buffer.from(`${userId}|${DateTime.now().toMillis()}`).toString('base64url')
+  //   const baseUrl = env.get('APP_URL')
+  //   return `${baseUrl}/auth/verify/${userId}/${hash}`
+  // }
 }

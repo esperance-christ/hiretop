@@ -1,27 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Vérifiez votre compte</title>
+  <title>Bienvenue sur HireTop !</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; }
-    .btn { display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
-    .footer { margin-top: 30px; font-size: 12px; color: #666; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f8fafc;
+      color: #334155;
+      line-height: 1.6;
+      padding: 20px 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+    .header {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .header p {
+      margin: 12px 0 0;
+      opacity: 0.95;
+      font-size: 16px;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .content h2 {
+      color: #1e293b;
+      font-size: 22px;
+      margin-top: 0;
+    }
+    .highlight {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+      font-size: 15px;
+    }
+    .btn {
+      display: inline-block;
+      background: #3b82f6;
+      color: white;
+      font-weight: 600;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      margin: 20px 0;
+      font-size: 16px;
+    }
+    .btn:hover { background: #2563eb; }
+    .footer {
+      background: #f1f5f9;
+      padding: 30px;
+      text-align: center;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .footer a { color: #3b82f6; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Bienvenue sur HireTop, {{ user.firstname }} !</h1>
-    <p>Merci de vous être inscrit. Pour finaliser votre inscription, veuillez vérifier votre adresse email.</p>
+    <!-- En-tête -->
+    <div class="header">
+      <h1>Bienvenue sur HireTop, {{ user.firstname }} !</h1>
+      <p>Votre compte {{ role === 'TALENT' ? 'Talent' : 'Recruteur' }} est activé et prêt à être utilisé</p>
+    </div>
 
-    <p style="text-align: center; margin: 30px 0;">
-      <a href="{{ verificationUrl }}" class="btn">Vérifier mon email</a>
-    </p>
+    <!-- Contenu -->
+    <div class="content">
+      <h2>Félicitations ! Votre inscription est finalisée</h2>
+      <p>
+        Cher{{ user.firstname?.endsWith('e') ? 'e' : '' }} {{ user.firstname }},
+      </p>
 
+      @if(role === 'TALENT')
+        <p>
+          Nous sommes ravis de vous accueillir sur <strong>HireTop</strong>, la plateforme qui connecte les meilleurs <strong>talents tech d’Afrique</strong> avec les entreprises qui recrutent vite et bien.
+        </p>
+        <div class="highlight">
+          <strong>3 étapes pour commencer :</strong><br>
+          1. Complétez votre profil (expériences, compétences, CV)<br>
+          2. Postulez aux offres qui vous intéressent<br>
+          3. Recevez des invitations directes des recruteurs
+        </div>
+        <p>Avec un profil complet, vous serez visible par <strong>100+ recruteurs</strong> dès aujourd'hui !</p>
+      @else
+        <p>
+          Nous sommes ravis de vous accueillir sur <strong>HireTop</strong>, la plateforme qui vous permet de <strong>trouver les meilleurs talents tech d’Afrique</strong> rapidement et efficacement.
+        </p>
+        <div class="highlight">
+          <strong>3 étapes pour recruter :</strong><br>
+          1. Publiez vos offres d'emploi<br>
+          2. Recevez des candidatures qualifiées<br>
+          3. Contactez directement les talents qui vous intéressent
+        </div>
+        <p>Nos talents sont vérifiés et prêts à rejoindre votre équipe !</p>
+      @endif
+
+      <div style="text-align: center;">
+        <a href="{{ env.get('APP_URL') }}/dashboard" class="btn">
+          {{ role === 'talent' ? 'Compléter mon profil' : 'Publier ma première offre' }}
+        </a>
+      </div>
+
+      <p>À très vite sur HireTop !</p>
+      <p>— L’équipe HireTop</p>
+    </div>
+
+    <!-- Pied de page -->
     <div class="footer">
-      <p>Si vous n’avez pas créé de compte, ignorez cet email.</p>
-      <p>HireTop © {{ new Date().getFullYear() }}</p>
+      <p>
+        Vous recevez cet email car vous venez de créer un compte sur
+        <a href="{{ env.get('APP_URL') }}">hiretop.com</a>
+      </p>
+      <p>
+        HireTop © {{ new Date().getFullYear() }} • Tous droits réservés<br>
+        <a href="#">Politique de confidentialité</a> •
+        <a href="#">Conditions d'utilisation</a>
+      </p>
     </div>
   </div>
 </body>

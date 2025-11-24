@@ -19,7 +19,6 @@ export default class RegisterController {
   async store({ request, response, session }: HttpContext) {
     const data = await request.validateUsing(registerUserValidation)
 
-    // on verifie si ce email est deja lie a un compte
     const existEmail = await User.findBy('email', data.email)
 
     if (existEmail) {
@@ -31,11 +30,11 @@ export default class RegisterController {
 
     const user = await this.userService.createUser({
       ...data,
-      role: 'TALENT',
+      role: 'COMPANY_ADMIN',
       profile: null,
     })
 
-    const verificationUrl = this.generateVerificationUrl(user.id)
+    // const verificationUrl = this.generateVerificationUrl(user.id)
 
     // Envoyer email de vérification
     await Mail.send((message) => {
@@ -43,15 +42,17 @@ export default class RegisterController {
         .to(user.email)
         .from('info@hiretop.com', 'HireTop')
         .subject('Vérifiez votre compte HireTop')
-        .htmlView('emails/verify_email', { user, verificationUrl })
+        .htmlView('emails/verify_email', { user, role: 'COMPANY_ADMIN' })
     })
 
-    return response.redirect().toRoute('auth.register.success')
+    return response.redirect('/dashboard')
   }
 
-  private generateVerificationUrl(userId: number): string {
-    const hash = Buffer.from(`${userId}|${DateTime.now().toMillis()}`).toString('base64url')
-    const baseUrl = env.get('APP_URL')
-    return `${baseUrl}/auth/verify/${userId}/${hash}`
-  }
+  // On desactive temporairement la verification par mail
+
+  // private generateVerificationUrl(userId: number): string {
+  //   const hash = Buffer.from(`${userId}|${DateTime.now().toMillis()}`).toString('base64url')
+  //   const baseUrl = env.get('APP_URL')
+  //   return `${baseUrl}/auth/verify/${userId}/${hash}`
+  // }
 }

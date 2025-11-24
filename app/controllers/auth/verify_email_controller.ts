@@ -34,7 +34,7 @@ export default class VerifyEmailController {
         message: 'Email vérifié avec succès !',
       })
 
-      return response.redirect().toPath('/jobs')
+      return response.redirect().toPath('/dashboard')
     } catch {
       session.flash('auth', {
         type: 'erro',

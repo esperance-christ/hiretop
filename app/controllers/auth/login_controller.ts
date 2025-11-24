@@ -24,7 +24,8 @@ export default class LoginController {
 
     // Verifier si l'email de l'utilisateur est vérifié
     if (!user.emailVerifiedAt) {
-      console.error('utilisateur non verifie : ', user)
+      await auth.use('web').login(user)
+
       session.flash('auth', {
         type: 'error',
         message: 'Veuillez vérifier votre email avant de vous connecter.',
