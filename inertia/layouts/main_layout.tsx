@@ -49,7 +49,7 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    <Avatar className="w-8 h-8">
+                    <Avatar className="w-10 h-10 bg-green-600">
                       <AvatarFallback className="bg-linear-to-br from-orange-400 to-pink-500 text-white text-xs">
                         {user.firstname.charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -57,9 +57,9 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-80">
-                  <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-6 p-2">
                     <div className="flex items-center gap-3">
-                      <Avatar>
+                      <Avatar className="w-10 h-10 bg-green-600">
                         <AvatarFallback className="bg-linear-to-br from-orange-400 to-pink-500 text-white">
                           {user.firstname.charAt(0).toUpperCase()}
                         </AvatarFallback>
