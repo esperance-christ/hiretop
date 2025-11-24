@@ -47,7 +47,7 @@ export default class FilesController {
    */
   async downloadTalentCv({ params, response, auth, request }: HttpContext) {
     const user = auth.getUserOrFail()
-    const talentUserId = params.userId
+    const talentUserId = params.id
     const preview = request.qs().preview === 'true'
 
     const talentUser = await User.findOrFail(talentUserId)

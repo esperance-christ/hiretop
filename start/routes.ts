@@ -76,7 +76,6 @@ router
     router
       .get('/applies', [ApplyController, 'show'])
       .as('talent.applies')
-      .use(middleware.profileComplete)
     router.post('/apply', [ApplyController, 'store'])
     router.put('/apply/:id', [ApplyController, 'update'])
     router.delete('/apply/:id', [ApplyController, 'delete'])
@@ -84,15 +83,12 @@ router
     // Job
     router.get('/job/:id', [JobsController, 'show']).as('talent.jobs')
 
-    // Candidatures du talent
+    // Profile du talent
     router.get('/profile', [ProfileController, 'show']).as('talent.profile')
     router.post('/profile/:id', [ProfileController, 'update'])
 
-    // router
-    //   .get('/complete-profile', async ({ inertia }) => inertia.render('talent/complete-profile'))
-    //   .as('complete.profile')
     router.get('/applications/:id/cv', [FilesController, 'downloadApplicationCv'])
-    router.get('/my-cv', [FilesController, 'downloadTalentCv'])
+    router.get('/:id/my-cv', [FilesController, 'downloadTalentCv'])
   })
   .prefix('/talent')
   .use([middleware.auth(), middleware.role('TALENT')])

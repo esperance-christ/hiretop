@@ -171,8 +171,6 @@ const TalentProfile = () => {
 
   const [skillsSelected, setSkillsSelected] = useState<number[]>(validSkillIds) || []
 
-  console.log(talentSkills)
-
   const [experiences, setExperiences] = useState(
     talentExperience?.map((e: any) => ({
       id: e.id,
@@ -495,7 +493,7 @@ const TalentProfile = () => {
                 {talentProfile?.cvUrl ? (
                   <Button asChild variant="link" className="mt-1 h-auto p-0">
                     <a
-                      href="/talent/my-cv"
+                      href={`/talent/${user.id}/my-cv`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary underline-offset-4 hover:underline"

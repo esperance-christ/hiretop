@@ -267,6 +267,8 @@ export class TalentService {
     if (exp.length > 0) completion += 25
     if (edu.length > 0) completion += 25
 
+    console.log("Profile completer a :", completion + "%")
+
     return completion
   }
 }
