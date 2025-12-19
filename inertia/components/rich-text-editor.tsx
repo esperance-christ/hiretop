@@ -8,6 +8,7 @@ interface RichTextEditorProps {
   value: string | null | undefined
   onChange?: (html: string) => void
   editable?: boolean
+  truncateLength?: number
 }
 
 type TiptapUpdatePayload = {
@@ -16,7 +17,25 @@ type TiptapUpdatePayload = {
   appendedTransactions: Transaction[]
 }
 
-export default function RichTextEditor({ value, onChange, editable = true }: RichTextEditorProps) {
+function truncateHtml (html: string, maxLength: number) {
+  if (!html) return ''
+
+  const div = document.createElement('div')
+  div.innerHTML = html
+  const text = div.textContent || div.innerText || ''
+
+  if (text.length <= maxLength) return html
+
+  const truncated = text.slice(0, maxLength).trim() + '…'
+  return truncated
+}
+
+export default function RichTextEditor({
+  value,
+  onChange,
+  editable = true,
+  truncateLength = 150,
+}: RichTextEditorProps) {
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -30,10 +49,12 @@ export default function RichTextEditor({ value, onChange, editable = true }: Ric
         }
       : undefined
 
-  // Toujours appeler useEditor
+  const content =
+    !editable && truncateLength ? truncateHtml(value || '', truncateLength) : value || ''
+
   const editor = useEditor({
     extensions: [StarterKit],
-    content: value || '',
+    content,
     onUpdate: updateHandler,
     editable,
     editorProps: {

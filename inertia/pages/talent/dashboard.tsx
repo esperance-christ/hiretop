@@ -200,10 +200,8 @@ const TalentBoard = () => {
                               </div>
 
                               {job.description && (
-                                // <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                                //   {job.description}
-                                // </p>
-                                <RichTextEditor value={job.description} />
+
+                                <RichTextEditor value={job.description}  truncateLength={200} />
                               )}
 
                               {formatSalary(job.salaryMin, job.salaryMax) && (
@@ -260,7 +258,7 @@ const TalentBoard = () => {
                         {/* DESCRIPTION */}
                         <div className="mb-6">
                           <h3 className="font-semibold text-gray-900 mb-3">Description du poste</h3>
-                          {job.description && <p>{job.description}</p>}
+                          {job.description && <RichTextEditor value={job.description} />}
                         </div>
 
                         {/* SKILLS */}
