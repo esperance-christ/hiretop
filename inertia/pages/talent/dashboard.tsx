@@ -45,6 +45,13 @@ const TalentBoard = () => {
     router.get('/dashboard', {}, { replace: true })
   }
 
+  function basicSanitize(html: string) {
+    return html
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+      .replace(/on\w+="[^"]*"/gi, '')
+      .replace(/javascript:/gi, '')
+  }
+
   const formatSalary = (min?: any, max?: any) => {
     if (!min && !max) return null
     if (min && max) return `${min} $ – ${max} $`
@@ -200,8 +207,11 @@ const TalentBoard = () => {
                               </div>
 
                               {job.description && (
-
-                                <RichTextEditor value={job.description}  truncateLength={200} />
+                                <p className='truncate'
+                                  dangerouslySetInnerHTML={{
+                                    __html: basicSanitize(job.description),
+                                  }}
+                                />
                               )}
 
                               {formatSalary(job.salaryMin, job.salaryMax) && (
@@ -258,7 +268,9 @@ const TalentBoard = () => {
                         {/* DESCRIPTION */}
                         <div className="mb-6">
                           <h3 className="font-semibold text-gray-900 mb-3">Description du poste</h3>
-                          {job.description && <RichTextEditor value={job.description} />}
+                          {job.description && (
+                            <RichTextEditor value={job.description} editable={false} />
+                          )}
                         </div>
 
                         {/* SKILLS */}
