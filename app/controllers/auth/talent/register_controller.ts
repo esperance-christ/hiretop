@@ -5,7 +5,6 @@ import { inject } from '@adonisjs/core'
 import env from '#start/env'
 import UserService from '#services/user_service'
 import { registerUserValidation } from '#validators/auth_request'
-import { DateTime } from 'luxon'
 import User from '#models/user'
 import hash from '@adonisjs/core/services/hash'
 
@@ -17,7 +16,7 @@ export default class RegisterController {
     return inertia.render('auth/register_talent')
   }
 
-  async store({ auth, request, response, session }: HttpContext) {
+  async store({ request, response, session }: HttpContext) {
     const data = await request.validateUsing(registerUserValidation)
 
     // on verifie si ce email est deja lie a un compte

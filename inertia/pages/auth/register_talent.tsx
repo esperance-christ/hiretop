@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { FaGoogle, FaApple } from 'react-icons/fa'
 import { Eye, EyeOff } from 'lucide-react'
+import Logo from '~/components/logo'
 
 const registerSchema = z.object({
   firstname: z.string().min(2, 'Le prénom doit contenir au moins 2 caractères'),
@@ -41,18 +42,19 @@ export default function Register() {
     <>
       <Head title={`Créer un compte ${appName}`} />
       <AuthLayout>
-        <div className="grid h-full min-h-[640px] w-full lg:grid-cols-4">
-          <div className="hidden lg:block lg:col-span-2 relative">
-            <div className="h-full inset-0 rounded-4xl overflow-hidden">
-              <div className="absolute top-4 left-8 flex flex-row items-center gap-2">
-                <span className="text-xl font-medium text-gray-400">{appName}</span>
-                <span className="w-2 h-2 block rounded-full bg-amber-400"></span>
+      <div className="grid h-full w-full lg:grid-cols-4">
+      <div className="hidden lg:block lg:col-span-2 relative">
+      <div className="h-full inset-0 p-2  overflow-hidden">
+      <div className="absolute top-6 left-6">
+                <Link href="/">
+                  <Logo className="text-white" />
+                </Link>{' '}
               </div>
 
               <img
-                src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80"
+                src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80"
                 alt="Team collaboration"
-                className="inset-0 h-full w-full object-cover"
+                className="inset-0 h-full w-full object-cover rounded-4xl"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.onerror = null
@@ -61,20 +63,8 @@ export default function Register() {
               />
 
               <div className="absolute inset-0 p-8 pointer-events-none">
-                <button className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 shadow-lg backdrop-blur-sm">
-                  <svg
-                    className="h-5 w-5 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                <button className="absolute top-6 right-6 flex h-10 w-auto px-6 items-center justify-center rounded-full bg-white/85 shadow-lg backdrop-blur-sm">
+                  J'suis le &nbsp;<strong><span className='text-lime-600'>talent</span></strong>
                 </button>
 
                 <div className="absolute bottom-60 left-20 w-64 rounded-3xl bg-white/20 p-5 shadow-xl backdrop-blur-sm">
@@ -119,14 +109,15 @@ export default function Register() {
           </div>
 
           <div className="lg:col-span-2 flex flex-col justify-between p-4 bg-linear-to-b from-[#f9f9f9] to-[#fff8e6] rounded-l-4xl">
-            <div className="lg:hidden flex flex-row items-center gap-2">
-              <span className="text-lg font-medium text-gray-800">{appName}</span>
-              <span className="w-2 h-2 block rounded-full bg-amber-400"></span>
+            <div className="lg:hidden">
+              <Link href="/">
+                <Logo className="text-black" />
+              </Link>{' '}
             </div>
 
             <div className="flex flex-col items-center px-4 lg:px-12">
-              <div className="mb-6 text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Inscription</h1>
+            <div className="lg:mt-24 mb-6 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Inscription</h1>
                 <p className="text-sm text-gray-600">
                   Renseignez les differents informations pour créer votre compte {appName}
                 </p>
@@ -231,7 +222,16 @@ export default function Register() {
                   Se connecter
                 </Link>
               </span>
-              <Link href="/terms" className="font-medium text-gray-700 underline">
+              <span>
+                Je suis un Recruiteur ?{' '}
+                <Link
+                  href="/auth/register-recruiter"
+                  className="font-medium text-gray-700 underline hover:text-yellow-600"
+                >
+                  Créer un compte
+                </Link>
+              </span>
+              <Link href="#" className="font-medium text-gray-700 underline">
                 Terms & Conditions
               </Link>
             </div>

@@ -21,6 +21,25 @@ export const registerUserValidation = vine.compile(
   })
 )
 
+export const registerCompanyUserValidation = vine.compile(
+  vine.object({
+    email: vine
+      .string()
+      .email()
+      .normalizeEmail()
+      .toLowerCase()
+      .unique(async (query, field) => {
+        const user = await query.from('users').where('email', field).first()
+        return !user
+      })
+      .trim(),
+    firstname: vine.string().trim().minLength(2),
+    lastname: vine.string().trim().minLength(2),
+    company: vine.string().trim().minLength(2),
+    password: vine.string().minLength(8),
+  })
+)
+
 /**
  * Validation de la requete de connexion
  */
