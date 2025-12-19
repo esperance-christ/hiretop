@@ -216,7 +216,7 @@ export default function Register() {
                   disabled={isSubmitting}
                   className="h-12 w-full rounded-full bg-yellow-400 font-semibold text-gray-800 hover:bg-yellow-500 transition-colors"
                 >
-                  {isSubmitting ? 'Création...' : "S'inscrire"}
+                  {isSubmitting ? 'Création...' : "Créer un compte"}
                 </Button>
               </form>
             </div>
