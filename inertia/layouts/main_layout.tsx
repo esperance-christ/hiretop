@@ -20,7 +20,9 @@ const MainLayout = ({ children }: { children: ReactNode }) => {
   const menuItems = (shareMenuItems as menuItem[]) ?? []
 
   const handleLogout = () => {
-    router.delete('/auth/logout')
+    router.delete('/auth/logout', {
+      onSuccess: () => router.visit('/auth/login')
+    })
   }
 
   return (

@@ -14,64 +14,69 @@ const inertiaConfig = defineConfig({
   sharedData: {
     user: (ctx) =>
       ctx.inertia.always(async () => {
-        const logUser = ctx.auth.use('web').user
+        if (!ctx.auth) return null
 
+        const logUser = ctx.auth.use('web').user
         if (!logUser) return null
 
         const role = await logUser.roles().first()
         const permissions = await logUser.permissions()
 
-        const serializedUser = logUser.serialize()
-
         return {
-          ...serializedUser,
+          ...logUser.serialize(),
           role,
           permissions,
         }
       }) ?? null,
+
     menuItems: (ctx) =>
       ctx.inertia.always(async () => {
-        let menuItems: Array<{ label: string; href: string; route: string }> = []
+        if (!ctx.auth) return []
 
-        if (ctx.auth.use('web').user!) {
-          if (
-            (await ctx.auth.use('web').user!.hasRole('RECRUITER')) ||
-            (await ctx.auth.use('web').user!.hasRole('COMPANY_ADMIN'))
-          ) {
-            return (menuItems = [
-              { label: 'Accueil', href: '/dashboard', route: 'dashboard' },
-              { label: 'Publications', href: '/recruiter/posts', route: 'recruiter.posts' },
-              {
-                label: 'Candidatures',
-                href: '/recruiter/applies',
-                route: 'recruiter.applies',
-              },
-              {
-                label: 'Paramètres',
-                href: '/recruiter/configuration',
-                route: 'recruiter.settings',
-              },
-            ])
-          }
+        const user = ctx.auth.use('web').user
+        if (!user) return []
 
-          if (await ctx.auth.use('web').user!.hasRole('TALENT')) {
-            return (menuItems = [
-              { label: 'Accueil', href: '/dashboard', route: 'dashboard' },
-              {
-                label: 'Mes Candidatures',
-                href: '/talent/applies',
-                route: 'talent.applies',
-              },
-              {
-                label: 'Mon Profile',
-                href: '/talent/profile',
-                route: 'talent.profiles',
-              },
-            ])
-          }
+        if (
+          (await user.hasRole('RECRUITER')) ||
+          (await user.hasRole('COMPANY_ADMIN'))
+        ) {
+          return [
+            { label: 'Accueil', href: '/dashboard', route: 'dashboard' },
+            { label: 'Publications', href: '/recruiter/posts', route: 'recruiter.posts' },
+            {
+              label: 'Candidatures',
+              href: '/recruiter/applies',
+              route: 'recruiter.applies',
+            },
+            {
+              label: 'Paramètres',
+              href: '/recruiter/configuration',
+              route: 'recruiter.settings',
+            },
+          ]
         }
+
+        if (await user.hasRole('TALENT')) {
+          return [
+            { label: 'Accueil', href: '/dashboard', route: 'dashboard' },
+            {
+              label: 'Mes Candidatures',
+              href: '/talent/applies',
+              route: 'talent.applies',
+            },
+            {
+              label: 'Mon Profile',
+              href: '/talent/profile',
+              route: 'talent.profiles',
+            },
+          ]
+        }
+
+        return []
       }),
+
     currentUrl: (ctx) => ctx?.request?.url() ?? '/',
+
     flash: (ctx) => {
       return {
         auth: ctx?.session?.flashMessages?.get('auth') ?? null,
@@ -79,6 +84,7 @@ const inertiaConfig = defineConfig({
         error: ctx?.session?.flashMessages?.get('error') ?? null,
       }
     },
+
     appName: () => env.get('APP_NAME') || 'HireTop',
   },
 

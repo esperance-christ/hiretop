@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react'
-import { Link, usePage } from '@inertiajs/react'
+import { Link, router, usePage } from '@inertiajs/react'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import {
   Sidebar,
@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { Button } from '~/components/ui/button'
 
 interface menuItem {
   label: string
@@ -36,6 +37,12 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
   const user = auth
 
   const menuItems = (shareMenuItems as menuItem[]) ?? []
+
+  const handleLogout = () => {
+    router.delete('/auth/logout', {
+      onSuccess: () => router.visit('/auth/login'),
+    })
+  }
 
   return (
     <SidebarProvider>
@@ -104,15 +111,14 @@ export default function RecruiterLayout({ children }: { children: ReactNode }) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="text-red-600 focus:text-red-600">
-                  <Link
-                    href="/auth/logout"
-                    method="post"
-                    as="button"
-                    className="w-full flex items-center gap-2"
+                  <Button
+                    variant="ghost"
+                    onClick={handleLogout}
+                    className="w-full justify-start text-red-600 hover:bg-red-50"
                   >
-                    <LogOut className="h-4 w-4" />
-                    <span>Déconnexion</span>
-                  </Link>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Se déconnecter
+                  </Button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
