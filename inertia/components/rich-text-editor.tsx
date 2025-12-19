@@ -17,17 +17,14 @@ type TiptapUpdatePayload = {
   appendedTransactions: Transaction[]
 }
 
-function truncateHtml (html: string, maxLength: number) {
+// Fonction utilitaire : extrait du texte brut et tronque si besoin
+function extractText(html: string, maxLength?: number) {
   if (!html) return ''
-
-  const div = document.createElement('div')
-  div.innerHTML = html
-  const text = div.textContent || div.innerText || ''
-
-  if (text.length <= maxLength) return html
-
-  const truncated = text.slice(0, maxLength).trim() + '…'
-  return truncated
+  const text = html.replace(/<[^>]*>/g, '') // supprime toutes les balises HTML
+  if (maxLength && text.length > maxLength) {
+    return text.slice(0, maxLength).trim() + '…'
+  }
+  return text
 }
 
 export default function RichTextEditor({
@@ -49,8 +46,9 @@ export default function RichTextEditor({
         }
       : undefined
 
+  // Mode lecture seule : on utilise du texte brut, éventuellement tronqué
   const content =
-    !editable && truncateLength ? truncateHtml(value || '', truncateLength) : value || ''
+    !editable && truncateLength ? extractText(value || '', truncateLength) : value || ''
 
   const editor = useEditor({
     extensions: [StarterKit],
