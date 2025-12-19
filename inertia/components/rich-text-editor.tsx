@@ -34,7 +34,7 @@ export default function RichTextEditor({
   value,
   onChange,
   editable = true,
-  truncateLength = 150,
+  truncateLength,
 }: RichTextEditorProps) {
   const [isClient, setIsClient] = useState(false)
 
