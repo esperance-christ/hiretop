@@ -206,13 +206,7 @@ const TalentBoard = () => {
                                 </div>
                               </div>
 
-                              {job.description && (
-                                <p className='truncate'
-                                  dangerouslySetInnerHTML={{
-                                    __html: basicSanitize(job.description),
-                                  }}
-                                />
-                              )}
+                              {job.description && <RichTextEditor value={job.description} editable={false} truncateLength={300} />}
 
                               {formatSalary(job.salaryMin, job.salaryMax) && (
                                 <p className="text-sm font-medium text-gray-900 mt-2 flex items-center gap-1">
@@ -287,9 +281,6 @@ const TalentBoard = () => {
 
                         {/* APPLY BUTTONS */}
                         <div className="flex justify-end gap-3">
-                          {/* <Button variant="outline" asChild>
-                            <Link href={`/jobs/${job.id}`}>Voir les détails</Link>
-                          </Button> */}
 
                           {hasMatch ? (
                             <Button
