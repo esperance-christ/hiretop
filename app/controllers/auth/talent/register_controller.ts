@@ -41,14 +41,29 @@ export default class RegisterController {
 
     // const verificationUrl = this.generateVerificationUrl(user.id)
 
-    // Envoyer email de vérification
-    await Mail.send((message) => {
-      message
-        .to(user.email)
-        .from('info@hiretop.com', 'HireTop')
-        .subject('Bienvenue sur HireTop')
-        .htmlView('emails/verify_email', { user, role: 'TALENT' })
-    })
+    try {
+      // Vérifier si toutes les informations nécessaires sont présentes
+      if (!user.email) {
+        throw new Error('Email utilisateur non défini')
+      }
+
+      await Mail.send((message) => {
+        message
+          .to(user.email)
+          .from(
+            env.get('MAIL_FROM_ADDRESS', 'info@hiretop.com'),
+            env.get('MAIL_FROM_NAME', 'HireTop')
+          )
+          .subject('Bienvenue sur HireTop')
+          .htmlView('emails/verify_email', { user, role: 'TALENT' })
+      })
+    } catch (error) {
+      console.error('Erreur lors de l’envoi de l’email :', error.message)
+      session.flash('auth', {
+        type: 'warning',
+        message: "Inscription réussie, mais l'email de bienvenue n'a pas pu être envoyé.",
+      })
+    }
 
     // await auth.use('web').login(user)
     session.flash('auth', { type: 'success', message: 'inscription réussie ! Bienvenue.' })

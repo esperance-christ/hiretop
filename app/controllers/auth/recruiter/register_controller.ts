@@ -36,14 +36,31 @@ export default class RegisterController {
 
     // const verificationUrl = this.generateVerificationUrl(user.id)
 
-    // Envoyer email de vérification
-    await Mail.send((message) => {
-      message
-        .to(user.email)
-        .from('info@hiretop.com', 'HireTop')
-        .subject('Vérifiez votre compte HireTop')
-        .htmlView('emails/verify_email', { user, role: 'COMPANY_ADMIN' })
-    })
+    // --- Sécurisation de l'envoi mail ---
+    try {
+      if (!user.email) {
+        throw new Error('Email utilisateur non défini')
+      }
+
+      await Mail.send((message) => {
+        message
+          .to(user.email)
+          .from(
+            env.get('MAIL_FROM_ADDRESS', 'info@hiretop.com'),
+            env.get('MAIL_FROM_NAME', 'HireTop')
+          )
+          .subject('Vérifiez votre compte HireTop')
+          .htmlView('emails/verify_email', { user, role: 'COMPANY_ADMIN' })
+      })
+    } catch (error) {
+      console.error('Erreur lors de l’envoi de l’email :', error.message)
+      session.flash('auth', {
+        type: 'warning',
+        message: "Compte créé, mais l'email de vérification n'a pas pu être envoyé.",
+      })
+    }
+
+    session.flash('auth', { type: 'success', message: 'Compte créé avec succès !' })
 
     return response.redirect('/dashboard')
   }
